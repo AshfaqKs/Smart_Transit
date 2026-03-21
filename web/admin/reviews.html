@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feedback & Reviews — SmartTransit Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+    <style>
+        .star-filled {
+            color: #fbc02d;
+            font-size: 1.1rem;
+        }
+
+        .star-empty {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+                <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="routes.html" class="menu-item"><span class="icon">🗺️</span> Routes</a>
+            <a href="drivers.html" class="menu-item"><span class="icon">🚌</span> Drivers</a>
+            <a href="buses.html" class="menu-item"><span class="icon">🚍</span> Buses</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
+            <a href="users.html" class="menu-item"><span class="icon">👥</span> Users</a>
+            <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
+        </aside>
+        <main class="st-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">System Feedback & Reviews</h2>
+            </div>
+
+            <ul class="nav nav-pills mb-4 st-tabs" id="reviewTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="bus-tab" data-bs-toggle="tab" data-bs-target="#bus"
+                        type="button" role="tab" aria-selected="true">🚌 Bus Reviews</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="app-tab" data-bs-toggle="tab" data-bs-target="#app" type="button"
+                        role="tab" aria-selected="false">📱 App Experience</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- Bus Reviews Tab -->
+                <div class="tab-pane fade show active" id="bus" role="tabpanel" tabindex="0">
+                    <div class="row mb-3" id="busStatsRow" style="display:none;">
+                        <div class="col-md-3">
+                            <div class="st-card p-3 text-center border-secondary">
+                                <h6 class="text-muted fw-bold text-uppercase mb-1">Avg Rating</h6>
+                                <h3 class="fw-bold mb-0" id="busAvgRating">—</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="st-card p-3 text-center border-secondary">
+                                <h6 class="text-muted fw-bold text-uppercase mb-1">Total Reviews</h6>
+                                <h3 class="fw-bold mb-0" id="busTotalReviews">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="st-card">
+                        <div class="table-responsive">
+                            <table class="st-table">
+                                <thead>
+                                    <tr>
+                                        <th>Bus No.</th>
+                                        <th>Rating</th>
+                                        <th>Comments</th>
+                                        <th>Passenger</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="busReviewsTbody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Reviews Tab -->
+                <div class="tab-pane fade" id="app" role="tabpanel" tabindex="0">
+                    <div class="row mb-3" id="appStatsRow" style="display:none;">
+                        <div class="col-md-3">
+                            <div class="st-card p-3 text-center border-secondary">
+                                <h6 class="text-muted fw-bold text-uppercase mb-1">Avg Rating</h6>
+                                <h3 class="fw-bold mb-0" id="appAvgRating">—</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="st-card p-3 text-center border-secondary">
+                                <h6 class="text-muted fw-bold text-uppercase mb-1">Total Feedback</h6>
+                                <h3 class="fw-bold mb-0" id="appTotalReviews">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="st-card">
+                        <div class="table-responsive">
+                            <table class="st-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rating</th>
+                                        <th>Feedback</th>
+                                        <th>User</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appReviewsTbody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("admin");
+
+        function drawStars(rating) {
+            let html = "";
+            for (let i = 1; i <= 5; i++) {
+                html += (i <= rating) ? '<span class="star-filled">★</span>' : '<span class="star-empty">★</span>';
+            }
+            return html;
+        }
+
+        async function load() {
+            try {
+                const [busReviews, appReviews] = await Promise.all([
+                    api.get("/admin/reviews"),
+                    api.get("/admin/app-reviews")
+                ]);
+
+                // Render Bus Reviews
+                const busTbody = document.getElementById("busReviewsTbody");
+                if (!busReviews.length) {
+                    busTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No bus reviews submitted yet.</td></tr>';
+                } else {
+                    document.getElementById("busStatsRow").style.display = "flex";
+                    const avg = (busReviews.reduce((sum, r) => sum + r.rating, 0) / busReviews.length).toFixed(1);
+                    document.getElementById("busAvgRating").innerHTML = `${avg} <span class="star-filled fs-5">★</span>`;
+                    document.getElementById("busTotalReviews").textContent = busReviews.length;
+
+                    busTbody.innerHTML = busReviews.map(r => `
+                        <tr>
+                            <td class="fw-bold">🚌 ${esc(r.bus_number)}</td>
+                            <td style="min-width: 90px;">${drawStars(r.rating)}</td>
+                            <td><div class="text-wrap text-muted small" style="max-width:300px;">${esc(r.comments || "—")}</div></td>
+                            <td class="fw-bold opacity-75">${esc(r.user_name)}</td>
+                            <td class="text-muted small">${esc(r.created_at).substring(0, 10)}</td>
+                        </tr>
+                    `).join("");
+                }
+
+                // Render App Reviews
+                const appTbody = document.getElementById("appReviewsTbody");
+                if (!appReviews.length) {
+                    appTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No app feedback submitted yet.</td></tr>';
+                } else {
+                    document.getElementById("appStatsRow").style.display = "flex";
+                    // Need to reverse to show newest first, assuming API returns in DB order
+                    const appRevs = [...appReviews].reverse();
+
+                    const avg = (appRevs.reduce((sum, r) => sum + r.rating, 0) / appRevs.length).toFixed(1);
+                    document.getElementById("appAvgRating").innerHTML = `${avg} <span class="star-filled fs-5">★</span>`;
+                    document.getElementById("appTotalReviews").textContent = appRevs.length;
+
+                    appTbody.innerHTML = appRevs.map(r => `
+                        <tr>
+                            <td style="min-width: 90px;">${drawStars(r.rating)}</td>
+                            <td><div class="text-wrap fw-semibold" style="max-width:400px;">${esc(r.comments || "—")}</div></td>
+                            <td class="fw-bold opacity-75 text-muted">${esc(r.user_name)}</td>
+                            <td class="text-muted small">${esc(r.created_at).substring(0, 10)}</td>
+                        </tr>
+                    `).join("");
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById("busReviewsTbody").innerHTML = '<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>';
+                document.getElementById("appReviewsTbody").innerHTML = '<tr><td colspan="4" class="text-danger text-center">Failed to load data.</td></tr>';
+            }
+        }
+
+        load();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bus Management — SmartTransit Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+                <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="routes.html" class="menu-item"><span class="icon">🗺️</span> Routes</a>
+            <a href="drivers.html" class="menu-item"><span class="icon">🚌</span> Drivers</a>
+            <a href="buses.html" class="menu-item active"><span class="icon">🚍</span> Buses</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
+            <a href="users.html" class="menu-item"><span class="icon">👥</span> Users</a>
+            <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
+        </aside>
+        <main class="st-content">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold mb-0">Bus Management</h2>
+                <button class="btn-st" data-bs-toggle="modal" data-bs-target="#addBusModal">+ Add Bus</button>
+            </div>
+            <div class="st-card">
+                <div id="busTable">
+                    <div class="text-muted">Loading…</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Bus Modal -->
+    <div class="modal fade" id="addBusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Bus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body st-form">
+                    <div class="mb-3">
+                        <label>Bus Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="busNumber" placeholder="e.g. BUS-001" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Assign Route</label>
+                        <select class="form-select" id="busRoute">
+                            <option value="">— No route assigned —</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Assign Driver</label>
+                        <select class="form-select" id="busDriver">
+                            <option value="">— No driver assigned —</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Status</label>
+                        <select class="form-select" id="busStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-st" onclick="addBus()">Save Bus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Bus Modal -->
+    <div class="modal fade" id="editBusModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Bus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body st-form">
+                    <input type="hidden" id="editBusId" />
+                    <div class="mb-3">
+                        <label>Bus Number</label>
+                        <input type="text" class="form-control" id="editBusNumber" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Assign Route</label>
+                        <select class="form-select" id="editBusRoute">
+                            <option value="">— No route —</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Assign Driver</label>
+                        <select class="form-select" id="editBusDriver">
+                            <option value="">— No driver —</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Status</label>
+                        <select class="form-select" id="editBusStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-st" onclick="updateBus()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("admin");
+
+        let routes = [], drivers = [], buses = [];
+
+        async function load() {
+            [buses, routes, drivers] = await Promise.all([
+                api.get("/admin/buses"),
+                api.get("/admin/routes"),
+                api.get("/admin/drivers"),
+            ]);
+
+            // Populate Add modal dropdowns
+            populateSelect("busRoute", routes, "route_id", r => `${r.route_name} (${r.start_point} → ${r.end_point})`);
+            populateSelect("busDriver", drivers.filter(d => d.approval_status === true), "driver_id", d => `${d.name} — ${d.license_number}`);
+
+            const routeMap = Object.fromEntries(routes.map(r => [r.route_id, r]));
+            const driverMap = Object.fromEntries(drivers.map(d => [d.driver_id, d]));
+
+            const el = document.getElementById("busTable");
+            if (!buses.length) { el.innerHTML = '<p class="text-muted">No buses added yet. Click "+ Add Bus" to get started.</p>'; return; }
+
+            el.innerHTML = `<table class="st-table">
+          <thead><tr>
+            <th>Bus ID</th><th>Bus #</th><th>Route</th><th>Driver</th>
+            <th>Location</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody>${buses.map(b => {
+                const r = routeMap[b.route_id];
+                const d = driverMap[b.driver_id];
+                return `<tr>
+              <td><code>#${esc(b.bus_id)}</code></td>
+              <td class="fw-semibold">${esc(b.bus_number)}</td>
+              <td>${r ? `<span title="${esc(r.start_point)} → ${esc(r.end_point)}">${esc(r.route_name)}</span>` : '<span class="text-muted">—</span>'}</td>
+              <td>${d ? esc(d.name) : '<span class="text-muted">—</span>'}</td>
+              <td>📍 ${esc(b.current_location) || '<span class="text-muted">Unknown</span>'}</td>
+              <td>${badge(b.status)}</td>
+              <td>
+                <button class="btn btn-sm btn-primary me-1" onclick="openEdit(${b.bus_id})">✏ Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteBus(${b.bus_id})">🗑</button>
+              </td>
+            </tr>`;
+            }).join('')}</tbody>
+        </table>`;
+        }
+
+        function populateSelect(selectId, items, valKey, labelFn) {
+            const el = document.getElementById(selectId);
+            const current = el.value;
+            el.innerHTML = '<option value="">— None —</option>';
+            items.forEach(item => {
+                const opt = document.createElement("option");
+                opt.value = item[valKey];
+                opt.textContent = labelFn(item);
+                el.appendChild(opt);
+            });
+            el.value = current;
+        }
+
+        async function addBus() {
+            const num = document.getElementById("busNumber").value.trim();
+            if (!num) { showToast("Bus number is required", "error"); return; }
+            await api.post("/admin/buses", {
+                bus_number: num,
+                route_id: document.getElementById("busRoute").value || null,
+                driver_id: document.getElementById("busDriver").value || null,
+                status: document.getElementById("busStatus").value,
+            });
+            bootstrap.Modal.getInstance(document.getElementById("addBusModal")).hide();
+            showToast("Bus added successfully", "success");
+            load();
+        }
+
+        function openEdit(id) {
+            const b = buses.find(x => x.bus_id === id);
+            document.getElementById("editBusId").value = id;
+            document.getElementById("editBusNumber").value = b.bus_number;
+            document.getElementById("editBusStatus").value = b.status;
+
+            populateSelect("editBusRoute", routes, "route_id", r => `${r.route_name} (${r.start_point} → ${r.end_point})`);
+            populateSelect("editBusDriver", drivers.filter(d => d.approval_status === true), "driver_id", d => `${d.name} — ${d.license_number}`);
+
+            document.getElementById("editBusRoute").value = b.route_id || "";
+            document.getElementById("editBusDriver").value = b.driver_id || "";
+
+            new bootstrap.Modal(document.getElementById("editBusModal")).show();
+        }
+
+        async function updateBus() {
+            const id = document.getElementById("editBusId").value;
+            await api.put(`/admin/buses/${id}`, {
+                bus_number: document.getElementById("editBusNumber").value,
+                route_id: document.getElementById("editBusRoute").value || null,
+                driver_id: document.getElementById("editBusDriver").value || null,
+                status: document.getElementById("editBusStatus").value,
+            });
+            bootstrap.Modal.getInstance(document.getElementById("editBusModal")).hide();
+            showToast("Bus updated", "success");
+            load();
+        }
+
+        async function deleteBus(id) {
+            if (!confirm("Delete this bus permanently?")) return;
+            await api.delete(`/admin/buses/${id}`);
+            showToast("Bus deleted", "success");
+            load();
+        }
+
+        load();
+        setInterval(load, 15000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Find Nearest Bus — SmartTransit</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+        <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">🏠</span> Home</a>
+            <a href="buses.html" class="menu-item active"><span class="icon">🚌</span> Find Bus</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
+            <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
+            <a href="reviews.html" class="menu-item"><span class="icon">⭐</span> Reviews</a>
+        </aside>
+        <main class="st-content">
+            <h2 class="fw-bold mb-4">Active Buses &amp; Routes</h2>
+
+            <div id="geoWarning" class="alert alert-secondary d-flex align-items-center mb-4"
+                style="display:none; font-size:0.9rem;">
+                <span class="fs-4 me-3">ℹ️</span>
+                <div>
+                    <strong>Location Not Provided:</strong> Showing all active buses. Enable location access in your
+                    browser to sort buses by nearest distance.
+                </div>
+            </div>
+
+            <div class="row g-4" id="busGrid">
+                <div class="text-muted">Locating nearby buses…</div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("user");
+
+        // Haversine formula to calculate distance in km
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        async function fetchAndRender(userLat = null, userLng = null) {
+            try {
+                const [buses, routes] = await Promise.all([
+                    api.get("/user/buses/nearest"),
+                    api.get("/user/routes")
+                ]);
+
+                const routeMap = {};
+                routes.forEach(r => routeMap[r.route_id] = r);
+
+                const el = document.getElementById("busGrid");
+                if (!buses.length) {
+                    el.innerHTML = '<div class="col-12"><p class="text-muted">No active buses currently running.</p></div>';
+                    return;
+                }
+
+                // Calculate distance for each bus if user location is available
+                buses.forEach(b => {
+                    b.distanceStr = "";
+                    b.distanceVal = Infinity;
+
+                    if (b.current_location && userLat !== null && userLng !== null) {
+                        const warnEl = document.getElementById("geoWarning");
+                        if (warnEl) warnEl.remove(); // Nuke it completely from DOM on success
+                        const parts = b.current_location.split(",");
+                        if (parts.length === 2) {
+                            const busLat = parseFloat(parts[0]);
+                            const busLng = parseFloat(parts[1]);
+                            if (!isNaN(busLat) && !isNaN(busLng)) {
+                                const dist = getDistance(userLat, userLng, busLat, busLng);
+                                b.distanceVal = dist;
+                                b.distanceStr = dist >= 1 ? `${dist.toFixed(1)} km away` : `${Math.round(dist * 1000)} m away`;
+                            }
+                        }
+                    }
+                });
+
+                // Sort by distance
+                buses.sort((a, b) => a.distanceVal - b.distanceVal);
+
+                el.innerHTML = buses.map(b => {
+                    const route = routeMap[b.route_id];
+                    let distBadge = '';
+                    if (b.distanceStr) {
+                        distBadge = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm">${b.distanceStr}</span>`;
+                    }
+
+                    return `<div class="col-md-6 col-lg-4">
+                        <div class="st-card h-100 position-relative">
+                          <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="fw-bold fs-5 mb-1 d-flex align-items-center gap-2">
+                                    🚌 Bus ${esc(b.bus_number)}
+                                </div>
+                                ${badge(b.status)}
+                            </div>
+                            ${distBadge}
+                          </div>
+                          
+                          ${route ? `<div class="text-muted small mb-3 p-2 bg-dark rounded border border-secondary">
+                            <div class="fw-semibold mb-1 text-light">Route: ${esc(route.route_name)}</div>
+                            <div>📍 ${esc(route.start_point)}<br>🏁 ${esc(route.end_point)}</div>
+                          </div>` : '<div class="text-muted small mb-3">No route assigned</div>'}
+                          
+                          <div class="text-muted small">
+                            <i class="opacity-75">Last seen: ${esc(b.location_name || b.current_location) || "Location not available"}</i>
+                          </div>
+                        </div>
+                    </div>`;
+                }).join("");
+            } catch (err) {
+                console.error(err);
+                document.getElementById("busGrid").innerHTML = '<div class="col-12"><p class="text-danger">Failed to load buses.</p></div>';
+            }
+        }
+
+        let locationFound = false;
+
+        function init() {
+            if ("geolocation" in navigator) {
+                // We remove enableHighAccuracy. Often browsers fail to get a GPS lock quickly indoors,
+                // causing a timeout error which triggers the annoying "Location Not Provided" banner.
+                // We also extend the timeout to 15 seconds so the user has time to click "Allow".
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        locationFound = true;
+                        const warnEl = document.getElementById("geoWarning");
+                        if (warnEl) warnEl.remove();
+                        fetchAndRender(pos.coords.latitude, pos.coords.longitude);
+                    },
+                    (err) => {
+                        console.warn("Geolocation failed or denied", err);
+                        if (!locationFound) {
+                            document.getElementById("geoWarning").style.display = "block";
+                            fetchAndRender(null, null); // Render without distance sorting
+                        }
+                    },
+                    { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+                );
+            } else {
+                document.getElementById("geoWarning").style.display = "block";
+                fetchAndRender(null, null);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

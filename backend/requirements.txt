@@ -1,0 +1,24 @@
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.6.0
+Flask-SocketIO==5.3.6
+Flask-Bcrypt==1.0.1
+Flask-Cors==4.0.1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.1
+eventlet==0.36.1
+numpy==1.26.4
+Pillow==10.3.0
+geopy==2.4.1
+
+
+# ── AI / Face Recognition ─────────────────────────────────────────────────────
+# Standard `pip install dlib` fails on Windows (requires C++ compiler).
+# Use the following install order instead:
+#
+#   pip install dlib-bin                          # prebuilt binary, no compilation
+#   pip install face-recognition-models Click numpy Pillow
+#   pip install face_recognition --no-deps        # skip dlib dependency pull
+#
+# opencv is optional (used for video stream processing):
+#   pip install opencv-python

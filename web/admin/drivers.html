@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Drivers — SmartTransit Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+                <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="routes.html" class="menu-item"><span class="icon">🗺️</span> Routes</a>
+            <a href="drivers.html" class="menu-item active"><span class="icon">🚌</span> Drivers</a>
+            <a href="buses.html" class="menu-item"><span class="icon">🚍</span> Buses</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
+            <a href="users.html" class="menu-item"><span class="icon">👥</span> Users</a>
+            <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
+        </aside>
+        <main class="st-content">
+            <h2 class="fw-bold mb-4">Driver Management</h2>
+            <div class="st-card">
+                <div id="driversTable">
+                    <div class="text-muted">Loading…</div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("admin");
+
+        /* approval_status: null = pending, true = approved, false = rejected */
+        function statusBadge(s) {
+            if (s === true) return '<span class="badge-resolved">Approved</span>';
+            if (s === false) return '<span class="badge-rejected">Rejected</span>';
+            return '<span class="badge-pending">Pending</span>';
+        }
+
+        function actionBtns(d) {
+            let html = '';
+            if (d.approval_status !== true)
+                html += `<button class="btn btn-sm btn-success me-1" onclick="doApprove(${d.driver_id})">✔ Approve</button>`;
+            if (d.approval_status !== false)
+                html += `<button class="btn btn-sm btn-danger me-1" onclick="doReject(${d.driver_id})">✖ Reject</button>`;
+            html += `<button class="btn btn-sm btn-outline-secondary" onclick="doDelete(${d.driver_id})">🗑 Delete</button>`;
+            return html;
+        }
+
+        async function load() {
+            const drivers = await api.get("/admin/drivers");
+            const el = document.getElementById("driversTable");
+            if (!drivers.length) {
+                el.innerHTML = '<p class="text-muted">No drivers registered yet.</p>';
+                return;
+            }
+            el.innerHTML = `
+                <table class="st-table">
+                  <thead><tr>
+                    <th>#</th><th>Name</th><th>Email</th>
+                    <th>Phone</th><th>License</th><th>Status</th><th>Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    ${drivers.map(d => `<tr>
+                      <td>${esc(d.driver_id)}</td>
+                      <td>${esc(d.name)}</td>
+                      <td>${esc(d.email)}</td>
+                      <td>${esc(d.phone_number) || '—'}</td>
+                      <td>${esc(d.license_number)}</td>
+                      <td>${statusBadge(d.approval_status)}</td>
+                      <td>${actionBtns(d)}</td>
+                    </tr>`).join('')}
+                  </tbody>
+                </table>`;
+        }
+
+        async function doApprove(id) {
+            await api.put(`/admin/drivers/${id}/approve`, {});
+            showToast("Driver approved", "success");
+            load();
+        }
+        async function doReject(id) {
+            if (!confirm("Reject this driver? They will no longer be able to log in.")) return;
+            await api.put(`/admin/drivers/${id}/reject`, {});
+            showToast("Driver rejected", "success");
+            load();
+        }
+        async function doDelete(id) {
+            if (!confirm("Permanently delete this driver account?")) return;
+            await api.delete(`/admin/drivers/${id}`);
+            showToast("Driver deleted", "success");
+            load();
+        }
+        load();
+    </script>
+</body>
+
+</html>
