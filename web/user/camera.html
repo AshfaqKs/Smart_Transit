@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Camera AI — SmartTransit Passenger</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+        <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">🏠</span> Home</a>
+            <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="camera.html" class="menu-item active"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
+            <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
+            <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
+        </aside>
+        <main class="st-content">
+            <h2 class="fw-bold mb-4">AI Camera Simulation</h2>
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="st-card">
+                        <h5 class="fw-bold mb-3">Upload Camera Feed Frame</h5>
+                        <p class="text-muted small">Upload an image of a person's face. The AI module will scan it
+                            against all known criminals and missing persons.</p>
+
+                        <form id="uploadForm" onsubmit="uploadImage(event)">
+                            <div class="mb-3">
+                                <label class="fw-semibold">Select Bus</label>
+                                <select class="form-select" id="busSelect" required>
+                                    <option value="">-- Choose Bus --</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="fw-semibold">Upload Photo</label>
+                                <input type="file" class="form-control" id="photoFile" accept="image/*" required
+                                    onchange="previewImage(event)" />
+                            </div>
+
+                            <!-- Image Preview Area -->
+                            <div class="text-center mb-4" id="previewArea" style="display:none;">
+                                <img id="previewImg" src="" alt="Preview"
+                                    class="img-fluid rounded border border-secondary"
+                                    style="max-height: 250px; object-fit: cover;" />
+                            </div>
+
+                            <button type="submit" class="btn-st w-100 py-2" id="submitBtn">
+                                🔍 Scan Face
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="st-card h-100">
+                        <h5 class="fw-bold mb-3">Detection Result</h5>
+                        <div id="resultBox"
+                            class="p-4 rounded text-center border border-secondary d-flex flex-column justify-content-center align-items-center h-75">
+                            <h1 class="text-muted mb-3" style="font-size: 3rem;">📷</h1>
+                            <p class="text-muted mb-0">Upload a photo to see AI analysis results.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("user");
+
+        async function loadBuses() {
+            try {
+                const buses = await api.get("/user/buses/nearest");
+                const select = document.getElementById("busSelect");
+                buses.forEach(b => {
+                    const opt = document.createElement("option");
+                    opt.value = b.bus_id;
+                    opt.textContent = `Bus #${b.bus_number} (${b.registration_number})`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error("Failed to load buses", err);
+            }
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('previewArea').style.display = 'block';
+                document.getElementById('previewImg').src = URL.createObjectURL(file);
+            }
+        }
+
+        async function uploadImage(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById("photoFile");
+            const busId = document.getElementById("busSelect").value;
+            const btn = document.getElementById("submitBtn");
+            const resultBox = document.getElementById("resultBox");
+
+            if (!fileInput.files[0]) return;
+            if (!busId) { showToast("Please select a bus", "error"); return; }
+
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+            formData.append("bus_id", busId);
+
+            btn.disabled = true;
+            btn.innerHTML = '⚙️ Analyzing...';
+            resultBox.innerHTML = '<div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Running AI models...</p>';
+            resultBox.className = "p-4 rounded border border-secondary d-flex flex-column justify-content-center align-items-center h-75";
+
+            try {
+                const res = await api.upload("/camera/detect", formData);
+
+                if (res.error) {
+                    resultBox.innerHTML = `
+                        <h1 class="text-danger mb-2" style="font-size: 3rem;">⚠️</h1>
+                        <h4 class="text-danger">Error</h4>
+                        <p class="text-muted">${esc(res.error)}</p>
+                    `;
+                } else if (res.matched) {
+                    resultBox.innerHTML = `
+                        <h1 class="text-danger mb-2" style="font-size: 3rem;">🚨</h1>
+                        <h4 class="text-danger fw-bold">MATCH DETECTED!</h4>
+                        <div class="mt-3 text-start bg-dark p-3 rounded w-100" style="max-width: 300px;">
+                            <p class="mb-1"><strong>Category:</strong> <span class="text-warning text-capitalize">${esc(res.person_type.replace('_', ' '))}</span></p>
+                            <p class="mb-1"><strong>Subject ID:</strong> #${esc(res.reference_id)}</p>
+                            <p class="mb-0"><strong>Alert ID:</strong> #${esc(res.detection_id)} generated</p>
+                        </div>
+                    `;
+                    showToast("Alert generated across the system!", "error");
+                } else {
+                    resultBox.innerHTML = `
+                        <h1 class="text-success mb-2" style="font-size: 3rem;">✅</h1>
+                        <h4 class="text-success fw-bold">No Match Found</h4>
+                        <p class="text-muted mt-2">The person in the photo is not in the database.</p>
+                    `;
+                    showToast("Scan complete. Clean.", "success");
+                }
+            } catch (err) {
+                resultBox.innerHTML = `
+                    <h1 class="text-muted mb-2" style="font-size: 3rem;">❌</h1>
+                    <h5 class="text-muted">Network Error</h5>
+                    <p class="text-muted small">${esc(err.message)}</p>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔍 Scan Face';
+            }
+        }
+
+        loadBuses();
+    </script>
+</body>
+
+</html>

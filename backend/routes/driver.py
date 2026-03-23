@@ -3,12 +3,16 @@ Driver Routes — SmartTransit
 Profile management, live location update, schedule, and alert endpoints.
 """
 from flask import Blueprint, request, jsonify
+from datetime import datetime
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from extensions import db
 from models.bus_driver import BusDriver
 from models.bus import Bus
 from models.camera_detection import CameraDetection
 from models.review import Review
+from models.complaint import Complaint
+from models.trip import Trip
+from models.user import User
 from utils.geocoding import get_location_name
 
 driver_bp = Blueprint("driver", __name__, url_prefix="/api/driver")
@@ -80,6 +84,25 @@ def get_schedule():
         "route": bus.route.to_dict() if bus.route else None,
     })
 
+# ── Trips (History, Current, Future) ──────────────────────────────────────────
+@driver_bp.route("/trips", methods=["GET"])
+@jwt_required()
+def get_trips():
+    driver_id, err = _get_driver_id()
+    if err: return err
+    trips = Trip.query.filter_by(driver_id=driver_id).order_by(Trip.scheduled_time.desc()).all()
+    # Filter into categories
+    now = datetime.utcnow()
+    history = [t.to_dict() for t in trips if t.status == 'completed']
+    current = [t.to_dict() for t in trips if t.status == 'ongoing']
+    future  = [t.to_dict() for t in trips if t.status == 'scheduled']
+    
+    return jsonify({
+        "history": history,
+        "current": current,
+        "future":  future
+    })
+
 # ── Alerts (criminal / missing detections on assigned bus) ────────────────────
 @driver_bp.route("/alerts", methods=["GET"])
 @jwt_required()
@@ -89,10 +112,34 @@ def get_alerts():
     bus = Bus.query.filter_by(driver_id=driver_id).first()
     if not bus:
         return jsonify([])
+    
+    # Detections
     detections = CameraDetection.query.filter_by(bus_id=bus.bus_id).order_by(
         CameraDetection.detection_time.desc()
     ).all()
-    return jsonify([d.to_dict() for d in detections])
+    
+    # Complaints
+    complaints = Complaint.query.filter_by(bus_id=bus.bus_id).order_by(
+        Complaint.created_at.desc()
+    ).all()
+    
+    alerts = []
+    for d in detections:
+        item = d.to_dict()
+        item["type"] = "detection"
+        alerts.append(item)
+        
+    for c in complaints:
+        item = c.to_dict()
+        item["type"] = "complaint"
+        user = User.query.get(c.user_id)
+        item["passenger_name"] = user.name if user else "Unknown"
+        alerts.append(item)
+        
+    # Sort by time
+    alerts.sort(key=lambda x: x.get("detection_time") or x.get("created_at"), reverse=True)
+    
+    return jsonify(alerts)
 
 # ── Reviews ───────────────────────────────────────────────────────────────────
 @driver_bp.route("/reviews", methods=["GET"])

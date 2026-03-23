@@ -25,7 +25,10 @@
         <main class="st-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold mb-0">Missing Persons</h2>
-                <button class="btn-st" onclick="openAdd()">+ Add Record</button>
+                <div class="d-flex gap-2">
+                    <input type="text" id="searchName" class="form-control form-control-sm" placeholder="Search Name..." oninput="load()" style="width: 200px;" />
+                    <button class="btn-st" onclick="openAdd()">+ Add Record</button>
+                </div>
             </div>
             <div class="row g-3" id="missingGrid">
                 <div class="text-muted">Loading…</div>
@@ -57,7 +60,8 @@
     <script>
         requireAuth("police");
         async function load() {
-            const items = await api.get("/police/missing");
+            const name = document.getElementById("searchName").value;
+            const items = await api.get(`/police/missing?name=${encodeURIComponent(name)}`);
             const el = document.getElementById("missingGrid");
             if (!items.length) { el.innerHTML = '<p class="text-muted">No records.</p>'; return; }
             el.innerHTML = items.map(m => `

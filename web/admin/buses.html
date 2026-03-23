@@ -21,8 +21,6 @@
             <a href="drivers.html" class="menu-item"><span class="icon">🚌</span> Drivers</a>
             <a href="buses.html" class="menu-item active"><span class="icon">🚍</span> Buses</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
-            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="users.html" class="menu-item"><span class="icon">👥</span> Users</a>
             <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
         </aside>
@@ -51,6 +49,10 @@
                     <div class="mb-3">
                         <label>Bus Number <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="busNumber" placeholder="e.g. BUS-001" required />
+                    </div>
+                    <div class="mb-3">
+                        <label>Registration Number</label>
+                        <input type="text" class="form-control" id="regNumber" placeholder="e.g. KL-01-AB-1234" />
                     </div>
                     <div class="mb-3">
                         <label>Assign Route</label>
@@ -93,6 +95,10 @@
                     <div class="mb-3">
                         <label>Bus Number</label>
                         <input type="text" class="form-control" id="editBusNumber" />
+                    </div>
+                    <div class="mb-3">
+                        <label>Registration Number</label>
+                        <input type="text" class="form-control" id="editRegNumber" />
                     </div>
                     <div class="mb-3">
                         <label>Assign Route</label>
@@ -149,7 +155,7 @@
 
             el.innerHTML = `<table class="st-table">
           <thead><tr>
-            <th>Bus ID</th><th>Bus #</th><th>Route</th><th>Driver</th>
+            <th>#</th><th>Bus Details</th><th>Route</th><th>Driver</th>
             <th>Location</th><th>Status</th><th>Actions</th>
           </tr></thead>
           <tbody>${buses.map(b => {
@@ -157,7 +163,7 @@
                 const d = driverMap[b.driver_id];
                 return `<tr>
               <td><code>#${esc(b.bus_id)}</code></td>
-              <td class="fw-semibold">${esc(b.bus_number)}</td>
+              <td class="fw-semibold">${esc(b.bus_number)}${b.registration_number ? ` - ${esc(b.registration_number)}` : ''}</td>
               <td>${r ? `<span title="${esc(r.start_point)} → ${esc(r.end_point)}">${esc(r.route_name)}</span>` : '<span class="text-muted">—</span>'}</td>
               <td>${d ? esc(d.name) : '<span class="text-muted">—</span>'}</td>
               <td>📍 ${esc(b.current_location) || '<span class="text-muted">Unknown</span>'}</td>
@@ -189,6 +195,7 @@
             if (!num) { showToast("Bus number is required", "error"); return; }
             await api.post("/admin/buses", {
                 bus_number: num,
+                registration_number: document.getElementById("regNumber").value.trim() || null,
                 route_id: document.getElementById("busRoute").value || null,
                 driver_id: document.getElementById("busDriver").value || null,
                 status: document.getElementById("busStatus").value,
@@ -202,6 +209,7 @@
             const b = buses.find(x => x.bus_id === id);
             document.getElementById("editBusId").value = id;
             document.getElementById("editBusNumber").value = b.bus_number;
+            document.getElementById("editRegNumber").value = b.registration_number || "";
             document.getElementById("editBusStatus").value = b.status;
 
             populateSelect("editBusRoute", routes, "route_id", r => `${r.route_name} (${r.start_point} → ${r.end_point})`);
@@ -217,6 +225,7 @@
             const id = document.getElementById("editBusId").value;
             await api.put(`/admin/buses/${id}`, {
                 bus_number: document.getElementById("editBusNumber").value,
+                registration_number: document.getElementById("editRegNumber").value.trim() || null,
                 route_id: document.getElementById("editBusRoute").value || null,
                 driver_id: document.getElementById("editBusDriver").value || null,
                 status: document.getElementById("editBusStatus").value,

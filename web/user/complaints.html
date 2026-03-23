@@ -20,9 +20,10 @@
             <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
             <a href="complaints.html" class="menu-item active"><span class="icon">📋</span> Complaints</a>
             <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
             <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
-            <a href="reviews.html" class="menu-item"><span class="icon">⭐</span> Reviews</a>
         </aside>
         <main class="st-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -44,8 +45,13 @@
                         data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body st-form">
+                    <div class="mb-3"><label>Select Bus <span class="text-danger">*</span></label>
+                        <select class="form-select" id="cBusId" required>
+                            <option value="">-- Choose Bus --</option>
+                        </select>
+                    </div>
                     <div class="mb-3"><label>Complaint Type</label>
-                        <select class="form-select" id="cType">
+                        <select class="form-select" id="cType" onchange="toggleOther()">
                             <option>Driver Behaviour</option>
                             <option>Route Issue</option>
                             <option>Safety Concern</option>
@@ -53,10 +59,16 @@
                             <option>Other</option>
                         </select>
                     </div>
-                    <div class="mb-3"><label>Bus ID (optional)</label><input type="number" class="form-control"
-                            id="cBusId" /></div>
+                    <div class="mb-3 d-none" id="otherDetailsGroup">
+                        <label>Specify Other Details</label>
+                        <textarea class="form-control" id="cOtherDetails" rows="2"></textarea>
+                    </div>
                     <div class="mb-3"><label>Description</label><textarea class="form-control" id="cDesc" rows="3"
                             required></textarea></div>
+                    <div class="mb-3"><label>Attached Photo (Optional)</label>
+                        <input type="file" class="form-control" id="cPhoto" accept="image/*" />
+                    </div>
+                    <div id="locationStatus" class="small text-info mb-2">📍 Detecting location...</div>
                 </div>
                 <div class="modal-footer"><button class="btn-st" onclick="fileComplaint()">Submit</button></div>
             </div>
@@ -67,29 +79,75 @@
     <script src="../assets/js/api.js"></script>
     <script>
         requireAuth("user");
+        let userLocation = { coords: null, name: "Auto-detected" };
+
         async function load() {
-            const items = await api.get("/user/complaints");
+            const [items, buses] = await Promise.all([
+                api.get("/user/complaints"),
+                api.get("/user/buses/nearest")
+            ]);
+            
+            const busSelect = document.getElementById("cBusId");
+            busSelect.innerHTML = '<option value="">-- Choose Bus --</option>' + 
+                buses.map(b => `<option value="${b.bus_id}">${esc(b.bus_number)} (${esc(b.registration_number)})</option>`).join("");
+
             const el = document.getElementById("compList");
             if (!items.length) { el.innerHTML = '<p class="text-muted">No complaints filed yet.</p>'; return; }
             el.innerHTML = items.map(c => `
       <div class="py-3 border-bottom border-secondary">
         <div class="d-flex justify-content-between align-items-start">
           <div>
-            <div class="fw-semibold">${esc(c.complaint_type)}</div>
+            <div class="fw-semibold">${esc(c.complaint_type)} ${c.bus_id ? `<small class='text-muted'>(Bus #${c.bus_id})</small>` : ""}</div>
             <div class="text-muted" style="font-size:.85rem;">${esc(c.description?.substring(0, 100))}</div>
+            <div class="mt-1 small text-info">📍 ${esc(c.location_name || "Unknown location")}</div>
             ${c.reply ? `<div class="mt-1 st-alert st-alert-info" style="padding:.5rem .75rem; font-size:.85rem;">Admin Reply: ${esc(c.reply)}</div>` : ""}
           </div>
           ${badge(c.status)}
         </div>
       </div>`).join("");
+            
+            // Start location detection
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userLocation.coords = `${pos.coords.latitude},${pos.coords.longitude}`;
+                    document.getElementById("locationStatus").textContent = "📍 Location captured ✅";
+                }, err => {
+                    document.getElementById("locationStatus").textContent = "❌ Location access denied";
+                });
+            }
         }
+
+        function toggleOther() {
+            const type = document.getElementById("cType").value;
+            document.getElementById("otherDetailsGroup").classList.toggle("d-none", type !== "Other");
+        }
+
         async function fileComplaint() {
             const busId = document.getElementById("cBusId").value;
+            if (!busId) { showToast("Please select a bus", "error"); return; }
+
+            const type = document.getElementById("cType").value;
+            const other = document.getElementById("cOtherDetails").value;
+            const photoFile = document.getElementById("cPhoto").files[0];
+            let photoPath = null;
+            
+            if (photoFile) {
+                const fd = new FormData();
+                fd.append("file", photoFile);
+                const res = await api.upload("/common/upload", fd); // Assuming common upload exists or handle accordingly
+                photoPath = res.filename;
+            }
+
             await api.post("/user/complaints", {
-                complaint_type: document.getElementById("cType").value,
+                complaint_type: type,
                 description: document.getElementById("cDesc").value,
-                bus_id: busId ? parseInt(busId) : null,
+                bus_id: parseInt(busId),
+                location_coords: userLocation.coords,
+                location_name: userLocation.name,
+                other_details: type === "Other" ? other : null,
+                photo: photoPath
             });
+
             bootstrap.Modal.getInstance(document.getElementById("fileModal")).hide();
             showToast("Complaint submitted", "success"); load();
         }

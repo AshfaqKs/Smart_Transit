@@ -10,7 +10,8 @@ class Bus(db.Model):
     bus_number       = db.Column(db.String(30), unique=True, nullable=False)
     route_id         = db.Column(db.Integer, db.ForeignKey("routes.route_id"), nullable=True)
     driver_id        = db.Column(db.Integer, db.ForeignKey("bus_drivers.driver_id"), nullable=True)
-    current_location = db.Column(db.String(300))
+    registration_number = db.Column(db.String(50), unique=True, nullable=True)
+    current_location    = db.Column(db.String(300))
     location_name    = db.Column(db.String(500))
     status           = db.Column(db.String(50), default="active")  # active / inactive
 
@@ -22,6 +23,7 @@ class Bus(db.Model):
         return {
             "bus_id":           self.bus_id,
             "bus_number":       self.bus_number,
+            "registration_number": self.registration_number,
             "route_id":         self.route_id,
             "driver_id":        self.driver_id,
             "current_location": self.current_location,

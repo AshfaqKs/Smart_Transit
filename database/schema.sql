@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS route_points (
 CREATE TABLE IF NOT EXISTS buses (
     bus_id           SERIAL PRIMARY KEY,
     bus_number       VARCHAR(30) UNIQUE NOT NULL,
+    registration_number VARCHAR(50) UNIQUE,
     route_id         INTEGER REFERENCES routes(route_id) ON DELETE SET NULL,
     driver_id        INTEGER REFERENCES bus_drivers(driver_id) ON DELETE SET NULL,
     current_location VARCHAR(300),
@@ -85,6 +86,10 @@ CREATE TABLE IF NOT EXISTS complaints (
     police_id      INTEGER REFERENCES police_stations(police_id) ON DELETE SET NULL,
     complaint_type VARCHAR(100),
     description    TEXT,
+    location_coords VARCHAR(100),
+    location_name   VARCHAR(300),
+    photo          VARCHAR(300),
+    other_details  TEXT,
     status         VARCHAR(50) DEFAULT 'pending',
     reply          TEXT,
     created_at     TIMESTAMP DEFAULT NOW()
@@ -104,6 +109,17 @@ CREATE TABLE IF NOT EXISTS app_reviews (
     rating        INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comments      TEXT,
     created_at    TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS trips (
+    trip_id         SERIAL PRIMARY KEY,
+    bus_id          INTEGER NOT NULL REFERENCES buses(bus_id) ON DELETE CASCADE,
+    driver_id       INTEGER NOT NULL REFERENCES bus_drivers(driver_id) ON DELETE CASCADE,
+    route_id        INTEGER NOT NULL REFERENCES routes(route_id) ON DELETE CASCADE,
+    scheduled_time  TIMESTAMP NOT NULL,
+    start_time      TIMESTAMP,
+    end_time        TIMESTAMP,
+    status          VARCHAR(50) DEFAULT 'scheduled'
 );
 
 CREATE TABLE IF NOT EXISTS camera_detections (

@@ -21,8 +21,6 @@
             <a href="drivers.html" class="menu-item"><span class="icon">🚌</span> Drivers</a>
             <a href="buses.html" class="menu-item"><span class="icon">🚍</span> Buses</a>
             <a href="complaints.html" class="menu-item active"><span class="icon">📋</span> Complaints</a>
-            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="users.html" class="menu-item"><span class="icon">👥</span> Users</a>
             <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
         </aside>
@@ -53,11 +51,6 @@
                             <option value="rejected">Rejected</option>
                         </select>
                     </div>
-                    <div class="mb-3"><label>Assign Police Station</label>
-                        <select class="form-select" id="replyPolice">
-                            <option value="">-- None (Unassigned) --</option>
-                        </select>
-                    </div>
                     <div class="mb-3"><label>Reply Message</label><textarea class="form-control" id="replyMsg"
                             rows="3"></textarea></div>
                 </div>
@@ -80,16 +73,16 @@
             complaints = comps;
             policeStations = stations;
 
-            const policeSelect = document.getElementById("replyPolice");
-            policeSelect.innerHTML = '<option value="">-- None (Unassigned) --</option>' +
-                policeStations.map(p => `<option value="${p.police_id}">${esc(p.station_name)}</option>`).join("");
 
             const el = document.getElementById("compList");
             if (!complaints.length) { el.innerHTML = '<p class="text-muted">No complaints yet.</p>'; return; }
-            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Type</th><th>Description</th><th>Status</th><th>Station</th><th>Actions</th></tr></thead>
+            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Passenger</th><th>Bus</th><th>Type</th><th>Time</th><th>Status</th><th>Handled By</th><th>Actions</th></tr></thead>
       <tbody>${complaints.map(c => `<tr>
-        <td>${esc(c.complaint_id)}</td><td>${esc(c.complaint_type)}</td>
-        <td>${esc(c.description?.substring(0, 60))}…</td>
+        <td>${esc(c.complaint_id)}</td>
+        <td>${esc(c.user_name || "Unknown")}</td>
+        <td>${esc(c.bus_number)}${c.bus_registration ? `<br><small class='text-muted'>${esc(c.bus_registration)}</small>` : ""}</td>
+        <td>${esc(c.complaint_type)}</td>
+        <td>${new Date(c.created_at).toLocaleString()}</td>
         <td>${badge(c.status)}</td>
         <td>${c.police_id ? esc(policeStations.find(p => p.police_id == c.police_id)?.station_name || "Assigned") : "<span class='text-muted'>Unassigned</span>"}</td>
         <td><button class="btn btn-sm btn-primary" onclick="openReply(${c.complaint_id})">Reply / Assign</button></td>
@@ -101,7 +94,6 @@
             const c = complaints.find(x => x.complaint_id === id);
             document.getElementById("replyCompId").value = id;
             document.getElementById("replyStatus").value = c.status;
-            document.getElementById("replyPolice").value = c.police_id || "";
             document.getElementById("replyMsg").value = c.reply || "";
             new bootstrap.Modal(document.getElementById("replyModal")).show();
         }
@@ -111,7 +103,6 @@
             await api.put(`/admin/complaints/${id}/reply`, {
                 status: document.getElementById("replyStatus").value,
                 reply: document.getElementById("replyMsg").value,
-                police_id: document.getElementById("replyPolice").value || null
             });
             bootstrap.Modal.getInstance(document.getElementById("replyModal")).hide();
             showToast("Reply & Assignment saved!", "success");

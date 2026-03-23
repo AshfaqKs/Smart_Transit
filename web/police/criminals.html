@@ -25,7 +25,11 @@
         <main class="st-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="fw-bold mb-0">Criminal Records</h2>
-                <button class="btn-st" onclick="openAdd()">+ Add Criminal</button>
+                <div class="d-flex gap-2">
+                    <input type="text" id="searchName" class="form-control form-control-sm" placeholder="Search Name..." oninput="load()" style="width: 150px;" />
+                    <input type="text" id="searchType" class="form-control form-control-sm" placeholder="Crime Type..." oninput="load()" style="width: 150px;" />
+                    <button class="btn-st" onclick="openAdd()">+ Add Criminal</button>
+                </div>
             </div>
             <div class="row g-3" id="criminalsGrid">
                 <div class="text-muted">Loading…</div>
@@ -60,7 +64,9 @@
     <script>
         requireAuth("police");
         async function load() {
-            const items = await api.get("/police/criminals");
+            const name = document.getElementById("searchName").value;
+            const type = document.getElementById("searchType").value;
+            const items = await api.get(`/police/criminals?name=${encodeURIComponent(name)}&crime_type=${encodeURIComponent(type)}`);
             const el = document.getElementById("criminalsGrid");
             if (!items.length) { el.innerHTML = '<p class="text-muted">No records.</p>'; return; }
             el.innerHTML = items.map(c => `

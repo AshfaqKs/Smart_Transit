@@ -64,10 +64,14 @@
             complaints = await api.get("/police/complaints");
             const el = document.getElementById("compList");
             if (!complaints.length) { el.innerHTML = '<p class="text-muted">No complaints.</p>'; return; }
-            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Type</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Passenger</th><th>Bus</th><th>Type</th><th>Time</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>${complaints.map(c => `<tr>
-        <td>${esc(c.complaint_id)}</td><td>${esc(c.complaint_type)}</td>
-        <td>${esc(c.description?.substring(0, 60))}…</td>
+        <td>${esc(c.complaint_id)}</td>
+        <td>${esc(c.user_name || "Unknown")}</td>
+        <td>${esc(c.bus_number)}<br><small class='text-muted'>${esc(c.bus_registration)}</small></td>
+        <td>${esc(c.complaint_type)}</td>
+        <td>${new Date(c.created_at).toLocaleString()}</td>
+        <td>📍 ${esc(c.location_name || "Unknown")}</td>
         <td>${badge(c.status)}</td>
         <td><button class="btn btn-sm btn-primary" onclick="openAction(${c.complaint_id})">Action</button></td>
       </tr>`).join("")}</tbody></table>`;

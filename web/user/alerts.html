@@ -20,9 +20,10 @@
             <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
             <a href="alerts.html" class="menu-item active"><span class="icon">🔔</span> Alerts</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
             <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
-            <a href="reviews.html" class="menu-item"><span class="icon">⭐</span> Reviews</a>
         </aside>
         <main class="st-content">
             <h2 class="fw-bold mb-4">Safety Alerts</h2>
@@ -46,9 +47,9 @@
       <div class="st-card mb-3" style="border-left:4px solid var(--danger);">
         <div class="d-flex justify-content-between align-items-start">
           <div>
-            <div class="fw-bold text-danger">🚨 ${esc(a.detected_person_type === "criminal" ? "Criminal Detected" : "Missing Person Detected")}</div>
+            <div class="fw-bold text-danger">🚨 ${esc(a.detected_person_type === "criminal" ? "Criminal Detected" : "Missing Person Detected")}: ${esc(a.person_name || 'Unknown')}</div>
             <div class="text-muted mt-1" style="font-size:.85rem;">
-              Reference ID: #${esc(a.reference_id)} | Bus: ${esc(a.bus_id) || "N/A"}
+              Bus: ${esc(a.bus_number)} (${esc(a.bus_registration)}) | 📍 ${esc(a.location_name)}
             </div>
             <div class="text-muted" style="font-size:.8rem;">${esc(a.detection_time)}</div>
           </div>
