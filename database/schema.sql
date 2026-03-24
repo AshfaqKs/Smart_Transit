@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS admins (
     name         VARCHAR(120) NOT NULL,
     email        VARCHAR(200) UNIQUE NOT NULL,
     password     VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(20)
+    phone_number VARCHAR(20),
+    created_at   TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -15,7 +16,8 @@ CREATE TABLE IF NOT EXISTS users (
     email        VARCHAR(200) UNIQUE NOT NULL,
     password     VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
-    address      VARCHAR(300)
+    address      VARCHAR(300),
+    created_at   TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS bus_drivers (
@@ -25,7 +27,8 @@ CREATE TABLE IF NOT EXISTS bus_drivers (
     password        VARCHAR(255) NOT NULL,
     phone_number    VARCHAR(20),
     license_number  VARCHAR(50) UNIQUE NOT NULL,
-    approval_status BOOLEAN DEFAULT FALSE
+    approval_status BOOLEAN DEFAULT FALSE,
+    created_at      TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS routes (
@@ -45,7 +48,6 @@ CREATE TABLE IF NOT EXISTS route_points (
 CREATE TABLE IF NOT EXISTS buses (
     bus_id           SERIAL PRIMARY KEY,
     bus_number       VARCHAR(30) UNIQUE NOT NULL,
-    registration_number VARCHAR(50) UNIQUE,
     route_id         INTEGER REFERENCES routes(route_id) ON DELETE SET NULL,
     driver_id        INTEGER REFERENCES bus_drivers(driver_id) ON DELETE SET NULL,
     current_location VARCHAR(300),
@@ -58,7 +60,8 @@ CREATE TABLE IF NOT EXISTS police_stations (
     location       VARCHAR(300),
     contact_number VARCHAR(20),
     email          VARCHAR(200) UNIQUE NOT NULL,
-    password       VARCHAR(255) NOT NULL
+    password       VARCHAR(255) NOT NULL,
+    created_at     TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS criminals (
@@ -80,19 +83,18 @@ CREATE TABLE IF NOT EXISTS missing_persons (
 );
 
 CREATE TABLE IF NOT EXISTS complaints (
-    complaint_id   SERIAL PRIMARY KEY,
-    user_id        INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    bus_id         INTEGER REFERENCES buses(bus_id) ON DELETE SET NULL,
-    police_id      INTEGER REFERENCES police_stations(police_id) ON DELETE SET NULL,
-    complaint_type VARCHAR(100),
-    description    TEXT,
-    location_coords VARCHAR(100),
-    location_name   VARCHAR(300),
-    photo          VARCHAR(300),
-    other_details  TEXT,
-    status         VARCHAR(50) DEFAULT 'pending',
-    reply          TEXT,
-    created_at     TIMESTAMP DEFAULT NOW()
+    complaint_id              SERIAL PRIMARY KEY,
+    user_id                   INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    bus_id                    INTEGER REFERENCES buses(bus_id) ON DELETE SET NULL,
+    police_id                 INTEGER REFERENCES police_stations(police_id) ON DELETE SET NULL,
+    complaint_type            VARCHAR(100),
+    description               TEXT,
+    bus_registration          VARCHAR(50),
+    bus_location_at_complaint VARCHAR(255),
+    photo                     VARCHAR(255),
+    status                    VARCHAR(50) DEFAULT 'pending',
+    reply                     TEXT,
+    created_at                TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -111,22 +113,12 @@ CREATE TABLE IF NOT EXISTS app_reviews (
     created_at    TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS trips (
-    trip_id         SERIAL PRIMARY KEY,
-    bus_id          INTEGER NOT NULL REFERENCES buses(bus_id) ON DELETE CASCADE,
-    driver_id       INTEGER NOT NULL REFERENCES bus_drivers(driver_id) ON DELETE CASCADE,
-    route_id        INTEGER NOT NULL REFERENCES routes(route_id) ON DELETE CASCADE,
-    scheduled_time  TIMESTAMP NOT NULL,
-    start_time      TIMESTAMP,
-    end_time        TIMESTAMP,
-    status          VARCHAR(50) DEFAULT 'scheduled'
-);
-
 CREATE TABLE IF NOT EXISTS camera_detections (
     detection_id         SERIAL PRIMARY KEY,
     bus_id               INTEGER REFERENCES buses(bus_id) ON DELETE SET NULL,
     detected_person_type VARCHAR(50),
     reference_id         INTEGER,
     detection_time       TIMESTAMP DEFAULT NOW(),
+    location             VARCHAR(255),
     alert_status         VARCHAR(50) DEFAULT 'unresolved'
 );

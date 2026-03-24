@@ -158,7 +158,6 @@ def create_bus():
     data = request.get_json()
     bus = Bus(
         bus_number = data["bus_number"],
-        registration_number = data.get("registration_number"),
         route_id   = data.get("route_id") or None,
         driver_id  = data.get("driver_id") or None,
         status     = data.get("status", "active"),
@@ -174,7 +173,7 @@ def update_bus(id):
     if (e := _require_admin()): return e
     bus  = Bus.query.get_or_404(id)
     data = request.get_json()
-    for field in ["bus_number", "registration_number", "status", "current_location"]:
+    for field in ["bus_number", "status", "current_location"]:
         if field in data:
             setattr(bus, field, data[field])
     # Allow null to unassign
@@ -197,26 +196,9 @@ def delete_bus(id):
 @jwt_required()
 def get_complaints():
     if (e := _require_admin()): return e
-    complaints = Complaint.query.all()
-    results = []
-    for c in complaints:
-        d = c.to_dict()
-        user = User.query.get(c.user_id)
-        d["user_name"] = user.name if user else "Unknown"
-        if c.police_id:
-            ps = PoliceStation.query.get(c.police_id)
-            d["police_station_name"] = ps.station_name if ps else "Unknown"
-        else:
-            d["police_station_name"] = "Unassigned"
-        
-        if c.bus_id:
-            bus = Bus.query.get(c.bus_id)
-            d["bus_display"] = f"{bus.bus_number}-{bus.registration_number}" if bus else "Unknown"
-        else:
-            d["bus_display"] = "N/A"
-            
-        results.append(d)
-    return jsonify(results)
+    from sqlalchemy.orm import joinedload
+    complaints = Complaint.query.options(joinedload(Complaint.user)).all()
+    return jsonify([c.to_dict() for c in complaints])
 
 @admin_bp.route("/complaints/<int:id>/reply", methods=["PUT"])
 @jwt_required()
@@ -226,6 +208,8 @@ def reply_complaint(id):
     data = request.get_json()
     complaint.reply = data.get("reply")
     complaint.status = data.get("status", complaint.status)
+    if "police_id" in data:
+        complaint.police_id = data["police_id"] or None
     db.session.commit()
     return jsonify(complaint.to_dict())
 

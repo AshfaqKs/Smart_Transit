@@ -73,11 +73,8 @@
             el.innerHTML = alerts.slice(0, 5).map(a => `
       <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
         <div>
-          <span class="fw-bold text-danger">🚨 ${esc(a.detected_person_type)}: ${esc(a.person_name || 'Unknown')}</span>
-          <br>
-          <small class="text-white-50">
-            Bus: ${esc(a.bus_number)} (${esc(a.bus_registration)}) | 📍 ${esc(a.location_name)}
-          </small>
+          <span class="fw-semibold">${esc(a.detected_person_type)}</span>
+          · Ref #${esc(a.reference_id)} · Bus #${esc(a.bus_id) || "N/A"}
           <br><small class="text-muted">${esc(a.detection_time)}</small>
         </div>
         ${badge(a.alert_status)}

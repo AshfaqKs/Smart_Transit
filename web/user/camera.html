@@ -7,6 +7,22 @@
     <title>Camera AI — SmartTransit Passenger</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../assets/css/style.css" />
+    <style>
+        /* Make the "Choose File" button visible on dark backgrounds */
+        input[type="file"]::file-selector-button {
+            background: linear-gradient(135deg, #4f46e5, #6d28d9);
+            color: #fff;
+            border: none;
+            padding: .4rem .9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .875rem;
+            margin-right: .75rem;
+            transition: opacity .2s;
+        }
+        input[type="file"]::file-selector-button:hover { opacity: .85; }
+    </style>
 </head>
 
 <body>
@@ -15,15 +31,15 @@
         <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
     </nav>
     <div class="st-layout">
-        <aside class="st-sidebar">
+            <aside class="st-sidebar">
             <a href="dashboard.html" class="menu-item"><span class="icon">🏠</span> Home</a>
             <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
             <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
-            <a href="camera.html" class="menu-item active"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
             <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
+            <a href="camera.html" class="menu-item active"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
         </aside>
         <main class="st-content">
             <h2 class="fw-bold mb-4">AI Camera Simulation</h2>
@@ -36,9 +52,9 @@
 
                         <form id="uploadForm" onsubmit="uploadImage(event)">
                             <div class="mb-3">
-                                <label class="fw-semibold">Select Bus</label>
-                                <select class="form-select" id="busSelect" required>
-                                    <option value="">-- Choose Bus --</option>
+                                <label class="fw-semibold">Select Bus (Optional)</label>
+                                <select class="form-select" id="busSelect">
+                                    <option value="">— Testing (No specific bus) —</option>
                                 </select>
                             </div>
                             <div class="mb-4">
@@ -88,11 +104,11 @@
                 buses.forEach(b => {
                     const opt = document.createElement("option");
                     opt.value = b.bus_id;
-                    opt.textContent = `Bus #${b.bus_number} (${b.registration_number})`;
+                    opt.textContent = `Bus #${b.bus_number} ${b.route_id ? '(On Route)' : ''}`;
                     select.appendChild(opt);
                 });
             } catch (err) {
-                console.error("Failed to load buses", err);
+                console.error("Failed to load buses for dropdown", err);
             }
         }
 
@@ -113,11 +129,10 @@
             const resultBox = document.getElementById("resultBox");
 
             if (!fileInput.files[0]) return;
-            if (!busId) { showToast("Please select a bus", "error"); return; }
 
             const formData = new FormData();
             formData.append("image", fileInput.files[0]);
-            formData.append("bus_id", busId);
+            if (busId) formData.append("bus_id", busId);
 
             btn.disabled = true;
             btn.innerHTML = '⚙️ Analyzing...';
@@ -125,46 +140,63 @@
             resultBox.className = "p-4 rounded border border-secondary d-flex flex-column justify-content-center align-items-center h-75";
 
             try {
-                const res = await api.upload("/camera/detect", formData);
-
-                if (res.error) {
-                    resultBox.innerHTML = `
-                        <h1 class="text-danger mb-2" style="font-size: 3rem;">⚠️</h1>
-                        <h4 class="text-danger">Error</h4>
-                        <p class="text-muted">${esc(res.error)}</p>
-                    `;
-                } else if (res.matched) {
-                    resultBox.innerHTML = `
-                        <h1 class="text-danger mb-2" style="font-size: 3rem;">🚨</h1>
-                        <h4 class="text-danger fw-bold">MATCH DETECTED!</h4>
-                        <div class="mt-3 text-start bg-dark p-3 rounded w-100" style="max-width: 300px;">
-                            <p class="mb-1"><strong>Category:</strong> <span class="text-warning text-capitalize">${esc(res.person_type.replace('_', ' '))}</span></p>
-                            <p class="mb-1"><strong>Subject ID:</strong> #${esc(res.reference_id)}</p>
-                            <p class="mb-0"><strong>Alert ID:</strong> #${esc(res.detection_id)} generated</p>
-                        </div>
-                    `;
-                    showToast("Alert generated across the system!", "error");
+                // Auto-capture location if available
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        const name = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                        formData.append("location", name);
+                        const res = await api.upload("/camera/detect", formData);
+                        handleResponse(res, resultBox, btn);
+                    }, async () => {
+                        const res = await api.upload("/camera/detect", formData);
+                        handleResponse(res, resultBox, btn);
+                    });
                 } else {
-                    resultBox.innerHTML = `
-                        <h1 class="text-success mb-2" style="font-size: 3rem;">✅</h1>
-                        <h4 class="text-success fw-bold">No Match Found</h4>
-                        <p class="text-muted mt-2">The person in the photo is not in the database.</p>
-                    `;
-                    showToast("Scan complete. Clean.", "success");
+                    const res = await api.upload("/camera/detect", formData);
+                    handleResponse(res, resultBox, btn);
                 }
             } catch (err) {
+                // Fallback for fetch failure
                 resultBox.innerHTML = `
                     <h1 class="text-muted mb-2" style="font-size: 3rem;">❌</h1>
                     <h5 class="text-muted">Network Error</h5>
                     <p class="text-muted small">${esc(err.message)}</p>
                 `;
-            } finally {
                 btn.disabled = false;
                 btn.innerHTML = '🔍 Scan Face';
             }
         }
 
-        loadBuses();
+        function handleResponse(res, resultBox, btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Scan Face';
+
+            if (res.error) {
+                resultBox.innerHTML = `
+                    <h1 class="text-danger mb-2" style="font-size: 3rem;">⚠️</h1>
+                    <h4 class="text-danger">Error</h4>
+                    <p class="text-muted">${esc(res.error)}</p>
+                `;
+            } else if (res.matched) {
+                resultBox.innerHTML = `
+                    <h1 class="text-danger mb-2" style="font-size: 3rem;">🚨</h1>
+                    <h4 class="text-danger fw-bold">MATCH DETECTED!</h4>
+                    <div class="mt-3 text-start bg-dark p-3 rounded w-100" style="max-width: 300px;">
+                        <p class="mb-1"><strong>Category:</strong> <span class="text-warning text-capitalize">${esc(res.person_type.replace('_', ' '))}</span></p>
+                        <p class="mb-1"><strong>Subject ID:</strong> #${esc(res.reference_id)}</p>
+                        <p class="mb-0"><strong>Alert ID:</strong> #${esc(res.detection_id)} generated</p>
+                    </div>
+                `;
+                showToast("Alert generated across the system!", "error");
+            } else {
+                resultBox.innerHTML = `
+                    <h1 class="text-success mb-2" style="font-size: 3rem;">✅</h1>
+                    <h4 class="text-success fw-bold">No Match Found</h4>
+                    <p class="text-muted mt-2">The person in the photo is not in the database.</p>
+                `;
+                showToast("Scan complete. Clean.", "success");
+            }
+        }
     </script>
 </body>
 

@@ -1,7 +1,7 @@
 """
 Admin Model — SmartTransit
 """
-from extensions import db
+from extensions import db, get_ist_now
 
 class Admin(db.Model):
     __tablename__ = "admins"
@@ -11,6 +11,7 @@ class Admin(db.Model):
     email        = db.Column(db.String(200), unique=True, nullable=False)
     password     = db.Column(db.String(255), nullable=False)  # hashed
     phone_number = db.Column(db.String(20))
+    created_at   = db.Column(db.DateTime, default=get_ist_now)
 
     def to_dict(self):
         return {
@@ -18,4 +19,5 @@ class Admin(db.Model):
             "name":         self.name,
             "email":        self.email,
             "phone_number": self.phone_number,
+            "registration_date": self.created_at.isoformat() if self.created_at else None,
         }

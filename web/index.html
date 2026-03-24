@@ -92,21 +92,25 @@
           <!-- Login Form -->
           <form id="loginForm" onsubmit="doLogin(event)">
             <div class="mb-3">
-              <label>Email</label>
+              <label id="emailLabel">Email</label>
               <input type="email" class="form-control" id="loginEmail" required />
             </div>
             <div class="mb-3">
-              <label>Password</label>
+              <label id="passwordLabel">Password</label>
               <input type="password" class="form-control" id="loginPassword" required />
             </div>
             <button type="submit" class="btn-st w-100 py-2" id="loginBtn">Login</button>
           </form>
 
-          <!-- Register Form (user / driver) -->
+          <!-- Register Form (user / driver / police) -->
           <form id="registerForm" onsubmit="doRegister(event)" style="display:none;">
-            <div class="mb-3">
+            <div class="mb-3" id="stationDiv" style="display:none;">
+              <label>Station Name</label>
+              <input type="text" class="form-control" id="regStation" />
+            </div>
+            <div class="mb-3" id="nameDiv">
               <label>Full Name</label>
-              <input type="text" class="form-control" id="regName" required />
+              <input type="text" class="form-control" id="regName" />
             </div>
             <div class="mb-3">
               <label>Email</label>
@@ -137,10 +141,6 @@
             <!-- Police-specific -->
             <div id="policeFields" style="display:none;">
               <div class="mb-3">
-                <label>Station Name</label>
-                <input type="text" class="form-control" id="regStation" />
-              </div>
-              <div class="mb-3">
                 <label>Station Location</label>
                 <input type="text" class="form-control" id="regLocation" />
               </div>
@@ -168,7 +168,7 @@
     }
 
     function openLogin() {
-      const titles = { admin: "Admin Login", driver: "Driver Portal", police: "Police Login", user: "Passenger Portal" };
+      const titles = { admin: "Admin Login", driver: "Driver Portal", police: "Police Station Login", user: "Passenger Portal" };
       document.getElementById("modalTitle").textContent = titles[selectedRole] || "Login";
 
       // Show register toggle for user/driver/police
@@ -179,6 +179,16 @@
       document.getElementById("driverFields").style.display = selectedRole === "driver" ? "block" : "none";
       document.getElementById("userFields").style.display = selectedRole === "user" ? "block" : "none";
       document.getElementById("policeFields").style.display = selectedRole === "police" ? "block" : "none";
+      
+      // Toggle Name vs Station Name
+      const isPolice = selectedRole === "police";
+      document.getElementById("nameDiv").style.display = isPolice ? "none" : "block";
+      document.getElementById("stationDiv").style.display = isPolice ? "block" : "none";
+      
+      // Dynamically set email/password labels for police station login
+      document.getElementById("emailLabel").textContent = isPolice ? "Station Email" : "Email";
+      document.getElementById("passwordLabel").textContent = isPolice ? "Station Password" : "Password";
+      document.getElementById("loginEmail").placeholder = isPolice ? "e.g. station@police.gov" : "";
       showTab("login");
       new bootstrap.Modal(document.getElementById("loginModal")).show();
     }
@@ -212,15 +222,18 @@
 
     async function doRegister(e) {
       e.preventDefault();
+      const isPoliceRole = selectedRole === "police";
+      const nameVal = isPoliceRole ? document.getElementById("regStation").value : document.getElementById("regName").value;
+
       const body = {
-        name: document.getElementById("regName").value,
+        name: nameVal,
         email: document.getElementById("regEmail").value,
         password: document.getElementById("regPassword").value,
         phone_number: document.getElementById("regPhone").value,
       };
       if (selectedRole === "driver") body.license_number = document.getElementById("regLicense").value;
       if (selectedRole === "user") body.address = document.getElementById("regAddress").value;
-      if (selectedRole === "police") {
+      if (isPoliceRole) {
         body.station_name = document.getElementById("regStation").value;
         body.location = document.getElementById("regLocation").value;
         body.contact_number = document.getElementById("regPhone").value;

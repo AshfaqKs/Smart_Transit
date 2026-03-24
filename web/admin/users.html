@@ -21,8 +21,7 @@
             <a href="drivers.html" class="menu-item"><span class="icon">🚌</span> Drivers</a>
             <a href="buses.html" class="menu-item"><span class="icon">🚍</span> Buses</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
-            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
+            <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
             <a href="users.html" class="menu-item active"><span class="icon">👥</span> Users</a>
             <a href="police.html" class="menu-item"><span class="icon">👮</span> Police</a>
         </aside>
@@ -45,13 +44,13 @@
             const items = await api.get("/admin/users");
             const el = document.getElementById("usersList");
             if (!items.length) { el.innerHTML = '<p class="text-muted">No users found.</p>'; return; }
-            el.innerHTML = `<table class="st-table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Registration Date</th></tr></thead>
-            <tbody>${items.map(u => `<tr>
-                <td>${esc(u.user_id)}</td>
+            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Registration Date</th></tr></thead>
+            <tbody>${items.map((u, i) => `<tr>
+                <td class="text-muted small">${i + 1}</td>
                 <td class="fw-bold">${esc(u.name)}</td>
                 <td>${esc(u.email)}</td>
                 <td>${esc(u.phone_number)}</td>
-                <td>${esc(u.created_at)}</td>
+                <td>${u.registration_date ? new Date(u.registration_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</td>
             </tr>`).join("")}</tbody></table>`;
         }
         load();

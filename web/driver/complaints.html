@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complaints — SmartTransit Driver</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+    <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
+        <span class="brand">🚌 SmartTransit</span>
+        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+    </nav>
+    <div class="st-layout">
+        <aside class="st-sidebar">
+            <a href="dashboard.html" class="menu-item"><span class="icon">📊</span> Dashboard</a>
+            <a href="route.html" class="menu-item"><span class="icon">🗺️</span> My Route</a>
+            <a href="location.html" class="menu-item"><span class="icon">📍</span> Update Location</a>
+            <a href="complaints.html" class="menu-item active"><span class="icon">📋</span> Complaints</a>
+        </aside>
+        <main class="st-content">
+            <h2 class="fw-bold mb-2">Passenger Complaints</h2>
+            <p class="text-muted mb-4">Complaints filed against your bus by passengers.</p>
+            <div id="compList">
+                <div class="text-muted">Loading…</div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script>
+        requireAuth("driver");
+
+        function fmtDate(iso) {
+            if (!iso) return "—";
+            try { return new Date(iso).toLocaleString('en-IN'); } catch { return iso; }
+        }
+
+        async function load() {
+            const el = document.getElementById("compList");
+            try {
+                const items = await api.get("/driver/complaints");
+                if (!items.length) {
+                    el.innerHTML = '<div class="st-card text-muted">No complaints on your bus. All clear! ✅</div>';
+                    return;
+                }
+                el.innerHTML = `<div class="st-card p-0"><div class="table-scroll"><table class="st-table">
+                    <thead><tr>
+                        <th>#</th><th>Passenger</th><th>Type</th><th>Description</th>
+                        <th>Reg. No.</th><th>Location</th><th>Date/Time</th><th>Status</th>
+                    </tr></thead>
+                    <tbody>${items.map((c, i) => `<tr>
+                        <td><small class="text-muted">${i + 1}</small></td>
+                        <td class="fw-semibold">${esc(c.passenger_name)}</td>
+                        <td>${esc(c.complaint_type)}</td>
+                        <td><small>${esc(c.description?.substring(0, 80))}${c.description?.length > 80 ? "…" : ""}</small></td>
+                        <td><span class="font-monospace">${esc(c.bus_registration) || "—"}</span></td>
+                        <td><small>${esc(c.bus_location_name || c.bus_location_at_complaint) || "—"}</small></td>
+                        <td><small>${fmtDate(c.created_at)}</small></td>
+                        <td>${badge(c.status)}</td>
+                    </tr>`).join("")}
+                    </tbody></table></div></div>`;
+            } catch (err) {
+                el.innerHTML = '<div class="st-card text-danger">Failed to load complaints.</div>';
+            }
+        }
+
+        load();
+        setInterval(load, 30000);
+    </script>
+</body>
+</html>

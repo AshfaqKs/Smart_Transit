@@ -1,29 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Complaints — SmartTransit Passenger</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../assets/css/style.css" />
+    <style>
+        input[type="file"]::file-selector-button {
+            background: linear-gradient(135deg, #4f46e5, #6d28d9);
+            color: #fff; border: none; padding: .35rem .8rem;
+            border-radius: 6px; cursor: pointer; font-weight: 600;
+            font-size: .85rem; margin-right: .6rem; transition: opacity .2s;
+        }
+        input[type="file"]::file-selector-button:hover { opacity: .85; }
+        #locationStatus { font-size: .8rem; }
+    </style>
 </head>
-
 <body>
     <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
         <span class="brand">🚌 SmartTransit</span>
         <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
     </nav>
     <div class="st-layout">
-                <aside class="st-sidebar">
+        <aside class="st-sidebar">
             <a href="dashboard.html" class="menu-item"><span class="icon">🏠</span> Home</a>
             <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
             <a href="complaints.html" class="menu-item active"><span class="icon">📋</span> Complaints</a>
             <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
-            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
             <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
             <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item"><span class="icon">🔍</span> Face Scan</a>
         </aside>
         <main class="st-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -31,27 +39,34 @@
                 <button class="btn-st" data-bs-toggle="modal" data-bs-target="#fileModal">+ File Complaint</button>
             </div>
             <div class="st-card">
-                <div id="compList">
-                    <div class="text-muted">Loading…</div>
-                </div>
+                <div id="compList"><div class="text-muted">Loading…</div></div>
             </div>
         </main>
     </div>
+
+    <!-- File Complaint Modal -->
     <div class="modal fade" id="fileModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">File a Complaint</h5><button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">File a Complaint</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body st-form">
-                    <div class="mb-3"><label>Select Bus <span class="text-danger">*</span></label>
-                        <select class="form-select" id="cBusId" required>
-                            <option value="">-- Choose Bus --</option>
-                        </select>
+
+                    <!-- Bus Registration (searchable dropdown) -->
+                    <div class="mb-3">
+                        <label>Bus Registration Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="cBusReg" list="busListOptions"
+                               placeholder="Type or select a bus…" required />
+                        <datalist id="busListOptions"></datalist>
+                        <div class="form-text">Select from available buses or type to find one.</div>
                     </div>
-                    <div class="mb-3"><label>Complaint Type</label>
-                        <select class="form-select" id="cType" onchange="toggleOther()">
+
+                    <!-- Complaint Type -->
+                    <div class="mb-3">
+                        <label>Complaint Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="cType" onchange="onTypeChange()">
                             <option>Driver Behaviour</option>
                             <option>Route Issue</option>
                             <option>Safety Concern</option>
@@ -59,100 +74,175 @@
                             <option>Other</option>
                         </select>
                     </div>
-                    <div class="mb-3 d-none" id="otherDetailsGroup">
-                        <label>Specify Other Details</label>
-                        <textarea class="form-control" id="cOtherDetails" rows="2"></textarea>
+
+                    <!-- Other specify (shown only when "Other" selected) -->
+                    <div class="mb-3" id="otherBox" style="display:none;">
+                        <label>Please specify <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="cOther" placeholder="Describe the issue type…" />
                     </div>
-                    <div class="mb-3"><label>Description</label><textarea class="form-control" id="cDesc" rows="3"
-                            required></textarea></div>
-                    <div class="mb-3"><label>Attached Photo (Optional)</label>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label>Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cDesc" rows="3" required></textarea>
+                    </div>
+
+                    <!-- Current Location (auto-detected) -->
+                    <div class="mb-3">
+                        <label>Current Location</label>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="text" class="form-control" id="cLocation" readonly
+                                   placeholder="Auto-detecting…" />
+                            <button type="button" class="btn-st-outline btn-sm px-3" onclick="detectLocation()">📍</button>
+                        </div>
+                        <div id="locationStatus" class="text-muted mt-1">Click 📍 or allow auto-detect</div>
+                    </div>
+
+                    <!-- Photo (optional) -->
+                    <div class="mb-3">
+                        <label>Photo (optional)</label>
                         <input type="file" class="form-control" id="cPhoto" accept="image/*" />
+                        <div class="form-text">Attach a photo as evidence (optional).</div>
                     </div>
-                    <div id="locationStatus" class="small text-info mb-2">📍 Detecting location...</div>
                 </div>
-                <div class="modal-footer"><button class="btn-st" onclick="fileComplaint()">Submit</button></div>
+                <div class="modal-footer">
+                    <button class="btn-st" onclick="fileComplaint()">Submit Complaint</button>
+                </div>
             </div>
         </div>
     </div>
+
     <div id="toast-container"></div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/js/api.js"></script>
     <script>
         requireAuth("user");
-        let userLocation = { coords: null, name: "Auto-detected" };
+
+        // Auto-detect location & load buses when modal opens
+        document.getElementById("fileModal").addEventListener("show.bs.modal", () => {
+            detectLocation();
+            loadBusOptions();
+        });
+
+        let busMap = {}; // registration -> id
+        async function loadBusOptions() {
+            try {
+                const buses = await api.get("/user/buses/nearest");
+                const list = document.getElementById("busListOptions");
+                busMap = {}; // Reset
+                list.innerHTML = buses.map(b => {
+                    busMap[b.bus_number] = b.bus_id;
+                    return `<option value="${esc(b.bus_number)}">Bus #${esc(b.bus_number)}</option>`;
+                }).join("");
+            } catch (err) { console.error("Failed to load bus options", err); }
+        }
+
+        function onTypeChange() {
+            const val = document.getElementById("cType").value;
+            document.getElementById("otherBox").style.display = val === "Other" ? "" : "none";
+        }
+
+        async function detectLocation() {
+            const locInput = document.getElementById("cLocation");
+            const status = document.getElementById("locationStatus");
+            if (!("geolocation" in navigator)) {
+                status.textContent = "Geolocation not supported.";
+                return;
+            }
+            status.textContent = "Detecting location…";
+            navigator.geolocation.getCurrentPosition(
+                async pos => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    locInput.value = `${lat}, ${lng}`;
+                    status.textContent = "Location detected.";
+                    // Try reverse-geocode via Nominatim
+                    try {
+                        const resp = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+                            { headers: { "Accept-Language": "en" } }
+                        );
+                        const geo = await resp.json();
+                        if (geo.display_name) {
+                            locInput.value = geo.display_name;
+                            status.textContent = "Location set: " + geo.display_name.split(",").slice(0, 3).join(", ");
+                        }
+                    } catch { /* keep raw coords */ }
+                },
+                err => {
+                    status.textContent = "Could not detect location. You may leave it blank.";
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function fmtDate(iso) {
+            if (!iso) return "";
+            try { return new Date(iso).toLocaleString('en-IN'); } catch { return iso; }
+        }
 
         async function load() {
-            const [items, buses] = await Promise.all([
-                api.get("/user/complaints"),
-                api.get("/user/buses/nearest")
-            ]);
-            
-            const busSelect = document.getElementById("cBusId");
-            busSelect.innerHTML = '<option value="">-- Choose Bus --</option>' + 
-                buses.map(b => `<option value="${b.bus_id}">${esc(b.bus_number)} (${esc(b.registration_number)})</option>`).join("");
-
+            const items = await api.get("/user/complaints");
             const el = document.getElementById("compList");
             if (!items.length) { el.innerHTML = '<p class="text-muted">No complaints filed yet.</p>'; return; }
             el.innerHTML = items.map(c => `
-      <div class="py-3 border-bottom border-secondary">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <div class="fw-semibold">${esc(c.complaint_type)} ${c.bus_id ? `<small class='text-muted'>(Bus #${c.bus_id})</small>` : ""}</div>
-            <div class="text-muted" style="font-size:.85rem;">${esc(c.description?.substring(0, 100))}</div>
-            <div class="mt-1 small text-info">📍 ${esc(c.location_name || "Unknown location")}</div>
-            ${c.reply ? `<div class="mt-1 st-alert st-alert-info" style="padding:.5rem .75rem; font-size:.85rem;">Admin Reply: ${esc(c.reply)}</div>` : ""}
-          </div>
-          ${badge(c.status)}
-        </div>
-      </div>`).join("");
-            
-            // Start location detection
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    userLocation.coords = `${pos.coords.latitude},${pos.coords.longitude}`;
-                    document.getElementById("locationStatus").textContent = "📍 Location captured ✅";
-                }, err => {
-                    document.getElementById("locationStatus").textContent = "❌ Location access denied";
-                });
-            }
-        }
-
-        function toggleOther() {
-            const type = document.getElementById("cType").value;
-            document.getElementById("otherDetailsGroup").classList.toggle("d-none", type !== "Other");
+              <div class="py-3 border-bottom border-secondary">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="fw-semibold">${esc(c.complaint_type)}</div>
+                    ${c.bus_registration ? `<div class="text-muted" style="font-size:.8rem;">🚌 ${esc(c.bus_registration)}</div>` : ""}
+                    <div class="text-muted" style="font-size:.85rem;">${esc(c.description?.substring(0, 100))}</div>
+                    ${c.bus_location_at_complaint ? `<div class="text-muted" style="font-size:.78rem;">📍 ${esc(c.bus_location_at_complaint)}</div>` : ""}
+                    <div class="text-muted" style="font-size:.78rem;">${fmtDate(c.created_at)}</div>
+                    ${c.reply ? `<div class="mt-1 st-alert st-alert-info" style="padding:.5rem .75rem;font-size:.85rem;">Admin Reply: ${esc(c.reply)}</div>` : ""}
+                  </div>
+                  ${badge(c.status)}
+                </div>
+              </div>`).join("");
         }
 
         async function fileComplaint() {
-            const busId = document.getElementById("cBusId").value;
-            if (!busId) { showToast("Please select a bus", "error"); return; }
+            const busReg = document.getElementById("cBusReg").value.trim();
+            if (!busReg) { showToast("Bus registration number is required.", "error"); return; }
 
-            const type = document.getElementById("cType").value;
-            const other = document.getElementById("cOtherDetails").value;
-            const photoFile = document.getElementById("cPhoto").files[0];
-            let photoPath = null;
-            
-            if (photoFile) {
-                const fd = new FormData();
-                fd.append("file", photoFile);
-                const res = await api.upload("/common/upload", fd); // Assuming common upload exists or handle accordingly
-                photoPath = res.filename;
+            const typeVal = document.getElementById("cType").value;
+            const finalType = typeVal === "Other"
+                ? (document.getElementById("cOther").value.trim() || "Other")
+                : typeVal;
+            const desc = document.getElementById("cDesc").value.trim();
+            if (!desc) { showToast("Description is required.", "error"); return; }
+
+            const photo = document.getElementById("cPhoto").files[0];
+            const location = document.getElementById("cLocation").value;
+
+            // Use FormData so we can attach photo
+            const fd = new FormData();
+            fd.append("complaint_type", finalType);
+            fd.append("description", desc);
+            fd.append("bus_registration", busReg);
+            fd.append("bus_location_at_complaint", location);
+            if (photo) fd.append("photo", photo);
+
+            // If we have a matching bus_id in our map, send it too
+            const matchedId = busMap[busReg];
+            if (matchedId) fd.append("bus_id", matchedId);
+
+            try {
+                await api.upload("/user/complaints", fd);
+                bootstrap.Modal.getInstance(document.getElementById("fileModal")).hide();
+                // Reset form
+                ["cBusReg", "cDesc", "cOther", "cLocation"].forEach(id => document.getElementById(id).value = "");
+                document.getElementById("cPhoto").value = "";
+                document.getElementById("cType").value = "Driver Behaviour";
+                document.getElementById("otherBox").style.display = "none";
+                showToast("Complaint submitted successfully!", "success");
+                load();
+            } catch (err) {
+                showToast("Failed to submit: " + (err.message || "Unknown error"), "error");
             }
-
-            await api.post("/user/complaints", {
-                complaint_type: type,
-                description: document.getElementById("cDesc").value,
-                bus_id: parseInt(busId),
-                location_coords: userLocation.coords,
-                location_name: userLocation.name,
-                other_details: type === "Other" ? other : null,
-                photo: photoPath
-            });
-
-            bootstrap.Modal.getInstance(document.getElementById("fileModal")).hide();
-            showToast("Complaint submitted", "success"); load();
         }
+
         load();
     </script>
 </body>
-
 </html>

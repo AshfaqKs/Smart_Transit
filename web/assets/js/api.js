@@ -3,7 +3,9 @@
  * Wraps fetch() with JWT auth headers and toast notifications.
  */
 
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_URL = "http://127.0.0.1:5000";
+const API_BASE = `${API_URL}/api`;
+const API_BASE_URL = API_URL; // Alias for backward compatibility in some pages
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
 function getToken() { return localStorage.getItem("st_token"); }
@@ -121,4 +123,22 @@ function badge(status) {
         approved: "badge-resolved",
     }[status?.toLowerCase()] || "badge-pending";
     return `<span class="${cls}">${esc(status)}</span>`;
+}
+
+/**
+ * Reverse Geocode coordinates using OpenStreetMap (Nominatim)
+ */
+async function reverseGeocode(lat, lng) {
+    try {
+        const resp = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { "Accept-Language": "en" } }
+        );
+        const geo = await resp.json();
+        if (geo.display_name) {
+            // Return top 3 parts for conciseness (e.g. "Locality, City, State")
+            return geo.display_name.split(",").slice(0, 3).join(", ");
+        }
+    } catch (err) { console.error("Geocode failed", err); }
+    return `${lat}, ${lng}`;
 }

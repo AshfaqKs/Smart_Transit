@@ -10,8 +10,6 @@ from models.missing_person import MissingPerson
 from models.complaint import Complaint
 from models.camera_detection import CameraDetection
 from models.review import Review
-from models.user import User
-from models.bus import Bus
 import os, uuid
 from flask import current_app
 
@@ -38,17 +36,7 @@ def _save_photo(file):
 def get_criminals():
     police_id, err = _get_police_id()
     if err: return err
-    query = Criminal.query.filter_by(police_id=police_id)
-    
-    # Search / Filter
-    name = request.args.get("name")
-    crime_type = request.args.get("crime_type")
-    if name: 
-        query = query.filter(Criminal.name.ilike(f"%{name}%"))
-    if crime_type:
-        query = query.filter(Criminal.crime_type.ilike(f"%{crime_type}%"))
-        
-    items = query.all()
+    items = Criminal.query.filter_by(police_id=police_id).all()
     return jsonify([c.to_dict() for c in items])
 
 @police_bp.route("/criminals", methods=["POST"])
@@ -98,14 +86,7 @@ def delete_criminal(id):
 def get_missing():
     police_id, err = _get_police_id()
     if err: return err
-    query = MissingPerson.query.filter_by(police_id=police_id)
-    
-    # Search / Filter
-    name = request.args.get("name")
-    if name:
-        query = query.filter(MissingPerson.name.ilike(f"%{name}%"))
-        
-    items = query.all()
+    items = MissingPerson.query.filter_by(police_id=police_id).all()
     return jsonify([m.to_dict() for m in items])
 
 @police_bp.route("/missing", methods=["POST"])
@@ -155,19 +136,8 @@ def delete_missing(id):
 def get_complaints():
     police_id, err = _get_police_id()
     if err: return err
-    # Show all complaints (any station can view and take action)
-    complaints = Complaint.query.order_by(Complaint.created_at.desc()).all()
-    results = []
-    for c in complaints:
-        d = c.to_dict()
-        user = User.query.get(c.user_id)
-        d["user_name"] = user.name if user else "Unknown"
-        if c.bus_id:
-            bus = Bus.query.get(c.bus_id)
-            d["bus_number"] = bus.bus_number if bus else "Unknown"
-            d["bus_registration"] = bus.registration_number if bus else ""
-        results.append(d)
-    return jsonify(results)
+    items = Complaint.query.filter_by(police_id=police_id).all()
+    return jsonify([c.to_dict() for c in items])
 
 @police_bp.route("/complaints/<int:id>/action", methods=["PUT"])
 @jwt_required()
@@ -178,7 +148,6 @@ def action_complaint(id):
     data = request.get_json()
     complaint.status = data.get("status", complaint.status)
     complaint.reply  = data.get("reply",  complaint.reply)
-    complaint.police_id = police_id # Marked as handled by this station
     db.session.commit()
     return jsonify(complaint.to_dict())
 
@@ -191,26 +160,7 @@ def get_alerts():
     detections = CameraDetection.query.order_by(
         CameraDetection.detection_time.desc()
     ).limit(50).all()
-    
-    results = []
-    for d in detections:
-        item = d.to_dict()
-        if d.bus_id:
-            bus = Bus.query.get(d.bus_id)
-            item["bus_number"] = bus.bus_number if bus else "Unknown"
-            item["bus_registration"] = bus.registration_number if bus else ""
-            item["location_name"] = bus.location_name if bus else "Unknown"
-            
-        # Enrich with person name
-        if d.detected_person_type == "criminal":
-            crim = Criminal.query.get(d.reference_id)
-            item["person_name"] = crim.name if crim else "Unknown"
-        elif d.detected_person_type == "missing_person":
-            miss = MissingPerson.query.get(d.reference_id)
-            item["person_name"] = miss.name if miss else "Unknown"
-            
-        results.append(item)
-    return jsonify(results)
+    return jsonify([d.to_dict() for d in detections])
 
 @police_bp.route("/alerts/<int:id>/resolve", methods=["PUT"])
 @jwt_required()

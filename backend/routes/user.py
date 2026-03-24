@@ -2,9 +2,10 @@
 User Routes — SmartTransit
 Profile, buses, routes, complaints, reviews, and public alerts.
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from extensions import db
+import os, uuid
 from models.user import User
 from models.bus import Bus
 from models.route import Route
@@ -59,34 +60,52 @@ def get_routes():
     _get_user_id()
     return jsonify([r.to_dict() for r in Route.query.all()])
 
-# ── Complaints ────────────────────────────────────────────────────────────────
+# -- Complaints ---------------------------------------------------------------
 @user_bp.route("/complaints", methods=["POST"])
 @jwt_required()
 def file_complaint():
     user_id, err = _get_user_id()
     if err: return err
-    data = request.get_json()
-    
-    # Mandatory bus_id
-    if not data.get("bus_id"):
-        return jsonify({"error": "Bus selection is mandatory"}), 400
-        
+
+    # Support both multipart/form-data (with photo) and JSON
+    is_multipart = request.content_type and "multipart" in request.content_type
+    data = request.form if is_multipart else (request.get_json() or {})
+
+    # Save optional photo
+    photo_filename = None
+    if is_multipart and "photo" in request.files:
+        f = request.files["photo"]
+        if f and f.filename:
+            upload_dir = current_app.config.get("UPLOAD_FOLDER", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            photo_filename = f"{uuid.uuid4().hex}_{f.filename}"
+            f.save(os.path.join(upload_dir, photo_filename))
+
     try:
+        bus_id = data.get("bus_id")
+        bus_reg = data.get("bus_registration")
+
+        # If ID is missing but registration is present, try to find the bus
+        if not bus_id and bus_reg:
+            matched_bus = Bus.query.filter_by(bus_number=bus_reg).first()
+            if matched_bus:
+                bus_id = matched_bus.bus_id
+
         complaint = Complaint(
             user_id=user_id,
-            bus_id=data.get("bus_id"),
-            police_id=data.get("police_id"),
+            bus_id=int(bus_id) if bus_id else None,
+            police_id=int(data["police_id"]) if data.get("police_id") else None,
             complaint_type=data.get("complaint_type"),
             description=data.get("description"),
-            location_coords=data.get("location_coords"),
-            location_name=data.get("location_name"),
-            photo=data.get("photo"),
-            other_details=data.get("other_details"),
+            bus_registration=bus_reg,
+            bus_location_at_complaint=data.get("bus_location_at_complaint"),
+            photo=photo_filename,
         )
         db.session.add(complaint)
         db.session.commit()
         return jsonify(complaint.to_dict()), 201
     except Exception as e:
+        import traceback; traceback.print_exc()
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
@@ -99,7 +118,21 @@ def get_my_complaints():
     return jsonify([c.to_dict() for c in items])
 
 # ── Reviews ───────────────────────────────────────────────────────────────────
-# Reviews removed as per user request
+@user_bp.route("/reviews", methods=["POST"])
+@jwt_required()
+def post_review():
+    user_id, err = _get_user_id()
+    if err: return err
+    data = request.get_json()
+    review = Review(
+        user_id=user_id,
+        bus_id=data["bus_id"],
+        rating=data["rating"],
+        comments=data.get("comments"),
+    )
+    db.session.add(review)
+    db.session.commit()
+    return jsonify(review.to_dict()), 201
 
 # ── App Reviews ───────────────────────────────────────────────────────────────
 @user_bp.route("/app-reviews", methods=["POST"])
@@ -125,24 +158,7 @@ def get_alerts():
     detections = CameraDetection.query.order_by(
         CameraDetection.detection_time.desc()
     ).limit(30).all()
-    
-    results = []
-    for d in detections:
-        item = d.to_dict()
-        if d.bus_id:
-            bus = Bus.query.get(d.bus_id)
-            item["bus_details"] = f"{bus.bus_number}-{bus.registration_number}" if bus else "Unknown"
-            item["bus_location"] = bus.location_name if bus else "Unknown"
-            
-        if d.detected_person_type == "criminal":
-            crim = Criminal.query.get(d.reference_id)
-            item["person_name"] = crim.name if crim else "Unknown"
-        elif d.detected_person_type == "missing_person":
-            miss = MissingPerson.query.get(d.reference_id)
-            item["person_name"] = miss.name if miss else "Unknown"
-            
-        results.append(item)
-    return jsonify(results)
+    return jsonify([d.to_dict() for d in detections])
 
 # ── Safety Records (Criminals & Missing Persons) ──────────────────────────────
 @user_bp.route("/criminals", methods=["GET"])

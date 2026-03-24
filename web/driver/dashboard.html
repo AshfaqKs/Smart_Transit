@@ -19,7 +19,7 @@
             <a href="dashboard.html" class="menu-item active"><span class="icon">📊</span> Dashboard</a>
             <a href="route.html" class="menu-item"><span class="icon">🗺️</span> My Route</a>
             <a href="location.html" class="menu-item"><span class="icon">📍</span> Update Location</a>
-            <a href="alerts.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
         </aside>
         <main class="st-content">
             <h2 class="fw-bold mb-4">Driver Dashboard</h2>
@@ -42,16 +42,8 @@
                 </div>
                 <div class="col-12">
                     <div class="st-card">
-                        <h5 class="fw-bold mb-3">Recent Complaints & Alerts</h5>
+                        <h5 class="fw-bold mb-3">Recent Complaints on My Bus</h5>
                         <div id="driverAlerts">
-                            <div class="text-muted">Loading…</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <div class="st-card">
-                        <h5 class="fw-bold mb-3">My Trips Schedule</h5>
-                        <div id="tripSchedule">
                             <div class="text-muted">Loading…</div>
                         </div>
                     </div>
@@ -65,11 +57,8 @@
     <script>
         requireAuth("driver");
         async function load() {
-            const [profile, schedule, alerts, trips] = await Promise.all([
-                api.get("/driver/profile"), 
-                api.get("/driver/schedule"), 
-                api.get("/driver/alerts"),
-                api.get("/driver/trips")
+            const [profile, schedule, alerts] = await Promise.all([
+                api.get("/driver/profile"), api.get("/driver/schedule"), api.get("/driver/complaints"),
             ]);
             document.getElementById("profileInfo").innerHTML = `
       <dl class="row mb-0">
@@ -85,7 +74,7 @@
         <dl class="row mb-0">
           <dt class="col-5 text-muted">Bus #</dt><dd class="col-7">${esc(schedule.bus.bus_number)}</dd>
           <dt class="col-5 text-muted">Status</dt><dd class="col-7">${badge(schedule.bus.status)}</dd>
-          <dt class="col-5 text-muted">Location</dt><dd class="col-7">📍 ${esc(schedule.bus.current_location) || "Unknown"}</dd>
+          <dt class="col-5 text-muted">Location</dt><dd class="col-7">📍 ${esc(schedule.bus.location_name || schedule.bus.current_location) || "Unknown"}</dd>
           ${schedule.route ? `<dt class="col-5 text-muted">Route</dt><dd class="col-7">${esc(schedule.route.route_name)}</dd>
           <dt class="col-5 text-muted">From</dt><dd class="col-7">${esc(schedule.route.start_point)}</dd>
           <dt class="col-5 text-muted">To</dt><dd class="col-7">${esc(schedule.route.end_point)}</dd>` : ""}
@@ -94,56 +83,19 @@
                 document.getElementById("scheduleInfo").innerHTML = '<p class="text-muted">No bus assigned yet.</p>';
             }
 
-            const alertEl = document.getElementById("driverAlerts");
-            if (!alerts.length) { alertEl.innerHTML = '<p class="text-muted">No complaints or alerts. All clear! ✅</p>'; }
-            else alertEl.innerHTML = alerts.slice(0, 10).map(a => {
-                const isComplaint = a.complaint_id !== undefined;
-                return `
+            const compEl = document.getElementById("driverAlerts");
+            if (!alerts.length) { compEl.innerHTML = '<p class="text-muted">No complaints. All clear! ✅</p>'; }
+            else compEl.innerHTML = alerts.slice(0, 5).map(c => `
       <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
         <div>
-          <span class="fw-bold ${isComplaint ? 'text-warning' : 'text-danger'}">
-            ${isComplaint ? '📋 Complaint' : `🚨 ${esc(a.detected_person_type)}`}
-          </span>
-          <br>
-          <small class="text-muted">
-            ${isComplaint ? `From: ${esc(a.user_name || 'Passenger')} | Type: ${esc(a.complaint_type)}` : `Location: ${esc(a.location_name || 'Bus')}`}
-          </small>
+            <div class="fw-bold">${esc(c.complaint_type)}</div>
+            <small class="text-muted">By: ${esc(c.passenger_name || 'Passenger')}</small>
         </div>
         <div class="text-end">
-          <small class="text-muted d-block">${esc(a.detection_time || a.created_at)}</small>
-          ${badge(a.alert_status || a.status)}
+            <small class="text-muted d-block">${c.created_at ? new Date(c.created_at).toLocaleString('en-IN', {hour:'2-digit', minute:'2-digit'}) : "—"}</small>
+            ${badge(c.status)}
         </div>
-      </div>`;
-            }).join("");
-
-            // Trips
-            const tripEl = document.getElementById("tripSchedule");
-            const history = trips.filter(t => t.status === 'completed');
-            const current = trips.filter(t => t.status === 'ongoing');
-            const future = trips.filter(t => t.status === 'scheduled');
-            
-            tripEl.innerHTML = `
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>Ongoing</h6>
-                        ${current.length ? current.map(t => `<div class="p-2 mb-2 bg-dark rounded border border-primary">
-                            Route: ${esc(t.route_id)}<br><small>${new Date(t.start_time).toLocaleString()}</small>
-                        </div>`).join("") : "<p class='text-muted small'>None</p>"}
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Upcoming</h6>
-                        ${future.length ? future.map(t => `<div class="p-2 mb-2 bg-dark rounded border border-secondary">
-                            Route: ${esc(t.route_id)}<br><small>${new Date(t.scheduled_time).toLocaleString()}</small>
-                        </div>`).join("") : "<p class='text-muted small'>None</p>"}
-                    </div>
-                    <div class="col-md-4">
-                        <h6>History</h6>
-                        ${history.length ? history.slice(0, 3).map(t => `<div class="p-2 mb-2 bg-dark rounded border border-success">
-                            Route: ${esc(t.route_id)}<br><small>${new Date(t.end_time).toLocaleString()}</small>
-                        </div>`).join("") : "<p class='text-muted small'>None</p>"}
-                    </div>
-                </div>
-            `;
+      </div>`).join("");
         }
         load();
     </script>

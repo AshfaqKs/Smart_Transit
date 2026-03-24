@@ -1,25 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Route & Schedule — SmartTransit Driver</title>
+    <title>My Route — SmartTransit Driver</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../assets/css/style.css" />
     <style>
         .timeline {
-            border-left: 2px solid #0d6efd;
+            border-left: 2px solid #4f46e5;
             padding-left: 1rem;
             margin-left: 0.5rem;
             list-style-type: none;
         }
-
         .timeline-item {
             position: relative;
             margin-bottom: 1rem;
         }
-
         .timeline-item::before {
             content: "";
             position: absolute;
@@ -28,67 +25,83 @@
             width: 12px;
             height: 12px;
             background: #fff;
-            border: 2px solid #0d6efd;
+            border: 2px solid #4f46e5;
             border-radius: 50%;
         }
+        .trip-section-tabs .nav-link { color: var(--text-muted); font-weight: 600; }
+        .trip-section-tabs .nav-link.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
     </style>
 </head>
-
 <body>
     <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
         <span class="brand">🚌 SmartTransit</span>
         <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
     </nav>
     <div class="st-layout">
-                <aside class="st-sidebar">
+        <aside class="st-sidebar">
             <a href="dashboard.html" class="menu-item"><span class="icon">📊</span> Dashboard</a>
             <a href="route.html" class="menu-item active"><span class="icon">🗺️</span> My Route</a>
             <a href="location.html" class="menu-item"><span class="icon">📍</span> Update Location</a>
-            <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
+            <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
         </aside>
         <main class="st-content">
-            <h2 class="fw-bold mb-4">My Assigned Route</h2>
-            <div class="row g-4">
+            <h2 class="fw-bold mb-4">My Route</h2>
+
+            <!-- Current Trip card -->
+            <div class="st-card mb-4">
+                <h5 class="fw-bold mb-3">🚦 Current Trip</h5>
+                <div id="currentTrip"><div class="text-muted">Loading…</div></div>
+            </div>
+
+            <!-- Bus & Route Info -->
+            <div class="row g-4 mb-4">
                 <div class="col-lg-6">
                     <div class="st-card h-100">
-                        <h5 class="fw-bold mb-4">Bus Details</h5>
-                        <div id="busInfo">
-                            <div class="text-muted">Loading…</div>
-                        </div>
+                        <h5 class="fw-bold mb-3">🚌 Bus Details</h5>
+                        <div id="busInfo"><div class="text-muted">Loading…</div></div>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="st-card h-100">
-                        <h5 class="fw-bold mb-4">Route Info</h5>
-                        <div id="routeInfo">
-                            <div class="text-muted">Loading…</div>
-                        </div>
+                        <h5 class="fw-bold mb-3">🗺️ Route Info</h5>
+                        <div id="routeInfo"><div class="text-muted">Loading…</div></div>
                     </div>
                 </div>
             </div>
 
-            <div class="st-card mt-4">
-                <h5 class="fw-bold mb-3">Schedule / Trip Timings</h5>
-                <p class="text-muted small mb-4">You are expected to follow this general schedule. Timings are
-                    estimated.</p>
-                <div class="table-responsive">
-                    <table class="st-table">
-                        <thead>
-                            <tr>
-                                <th>Trip</th>
-                                <th>Direction</th>
-                                <th>Est. Departure</th>
-                                <th>Est. Arrival</th>
-                            </tr>
-                        </thead>
-                        <tbody id="scheduleTable">
-                            <tr>
-                                <td colspan="4" class="text-center text-muted">Loading…</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <!-- Trip History & Future Trips tabs (Hidden as requested) -->
+            <!--
+            <div class="st-card">
+                <ul class="nav trip-section-tabs mb-4 border-bottom border-secondary">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="tabHistBtn" onclick="showTripTab('hist')">📜 Trip History</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="tabFutBtn" onclick="showTripTab('fut')">📅 Future Trips</button>
+                    </li>
+                </ul>
+
+                <div id="tabHist">
+                    <p class="text-muted small mb-3">Past completed trips on this route (today's schedule used as reference).</p>
+                    <div class="table-scroll">
+                        <table class="st-table">
+                            <thead><tr><th>#</th><th>Direction</th><th>Departure</th><th>Arrival</th><th>Status</th></tr></thead>
+                            <tbody id="historyTable"><tr><td colspan="5" class="text-center text-muted">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tabFut" style="display:none;">
+                    <p class="text-muted small mb-3">Upcoming trips assigned for this bus route.</p>
+                    <div class="table-scroll">
+                        <table class="st-table">
+                            <thead><tr><th>#</th><th>Direction</th><th>Est. Departure</th><th>Est. Arrival</th><th>Status</th></tr></thead>
+                            <tbody id="futureTable"><tr><td colspan="5" class="text-center text-muted">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+            -->
         </main>
     </div>
     <div id="toast-container"></div>
@@ -97,98 +110,114 @@
     <script>
         requireAuth("driver");
 
+        function showTripTab(tab) {
+            document.getElementById("tabHist").style.display = tab === "hist" ? "" : "none";
+            document.getElementById("tabFut").style.display  = tab === "fut"  ? "" : "none";
+            document.getElementById("tabHistBtn").classList.toggle("active", tab === "hist");
+            document.getElementById("tabFutBtn").classList.toggle("active", tab === "fut");
+        }
+
         async function load() {
             try {
-                const scheduleData = await api.get("/driver/schedule");
+                const sd = await api.get("/driver/schedule");
 
-                if (!scheduleData.bus) {
-                    document.getElementById("busInfo").innerHTML = '<p class="text-muted">No bus assigned to you yet. Please contact your administrator.</p>';
+                if (!sd.bus) {
+                    document.getElementById("currentTrip").innerHTML = '<p class="text-muted">No bus assigned yet. Contact your administrator.</p>';
+                    document.getElementById("busInfo").innerHTML = '<p class="text-muted">No bus assigned.</p>';
                     document.getElementById("routeInfo").innerHTML = '<p class="text-muted">—</p>';
-                    document.getElementById("scheduleTable").innerHTML = '<tr><td colspan="4" class="text-center text-muted">No schedule available</td></tr>';
+                    const hTable = document.getElementById("historyTable");
+                    const fTable = document.getElementById("futureTable");
+                    if(hTable) hTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>';
+                    if(fTable) fTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>';
                     return;
                 }
 
-                // Bus Info
+                // ── Current Trip ──────────────────────────────────────────────
+                const routeName = sd.route ? esc(sd.route.route_name) : "—";
+                const start     = sd.route ? esc(sd.route.start_point) : "—";
+                const end_pt    = sd.route ? esc(sd.route.end_point)   : "—";
+                const busLoc    = esc(sd.bus.location_name || sd.bus.current_location) || "Unknown";
+
+                document.getElementById("currentTrip").innerHTML = `
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="text-muted small mb-1">Route</div>
+                      <div class="fw-bold fs-5">${routeName}</div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-muted small mb-1">Start → End</div>
+                      <div class="fw-semibold">${start} → ${end_pt}</div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="text-muted small mb-1">Current Bus Location</div>
+                      <div class="font-monospace text-warning">📍 ${busLoc}</div>
+                    </div>
+                  </div>`;
+
+                // ── Bus Info ──────────────────────────────────────────────────
                 document.getElementById("busInfo").innerHTML = `
                   <dl class="row mb-0">
-                    <dt class="col-4 text-muted">Bus Number</dt>
-                    <dd class="col-8 fw-bold fs-5">${esc(scheduleData.bus.bus_number)}</dd>
-                    
-                    <dt class="col-4 text-muted">Status</dt>
-                    <dd class="col-8">${badge(scheduleData.bus.status)}</dd>
-                    
-                    <dt class="col-4 text-muted">Last Location</dt>
-                    <dd class="col-8 font-monospace text-warning">📍 ${esc(scheduleData.bus.current_location) || "Not broadcasting"}</dd>
+                    <dt class="col-5 text-muted">Reg. No.</dt>
+                    <dd class="col-7 fw-bold fs-5">${esc(sd.bus.bus_number)}</dd>
+                    <dt class="col-5 text-muted">Status</dt>
+                    <dd class="col-7">${badge(sd.bus.status)}</dd>
+                    <dt class="col-5 text-muted">Location</dt>
+                    <dd class="col-7 font-monospace text-warning">📍 ${busLoc}</dd>
                   </dl>`;
 
-                // Route Info
-                if (scheduleData.route) {
-                    let stopsHtml = '';
-                    if (scheduleData.route.stops && scheduleData.route.stops.length > 0) {
+                // ── Route Info ────────────────────────────────────────────────
+                if (sd.route) {
+                    let stopsHtml = "";
+                    if (sd.route.stops && sd.route.stops.length > 0) {
                         stopsHtml = '<ul class="timeline mt-3 mb-0">';
-                        scheduleData.route.stops.forEach(s => {
+                        sd.route.stops.forEach(s => {
                             stopsHtml += `<li class="timeline-item"><span class="fw-semibold">Stop ${s.stop_order}:</span> ${esc(s.stop_name)}</li>`;
                         });
-                        stopsHtml += '</ul>';
+                        stopsHtml += "</ul>";
                     } else {
                         stopsHtml = '<p class="text-muted small mt-2 mb-0">No stops defined</p>';
                     }
-
                     document.getElementById("routeInfo").innerHTML = `
                       <dl class="row mb-0">
-                        <dt class="col-4 text-muted">Route Name</dt>
-                        <dd class="col-8 fw-bold">${esc(scheduleData.route.route_name)}</dd>
-                        
-                        <dt class="col-4 text-muted">Start Point</dt>
-                        <dd class="col-8">${esc(scheduleData.route.start_point)}</dd>
-                        
-                        <dt class="col-4 text-muted">End Point</dt>
-                        <dd class="col-8">${esc(scheduleData.route.end_point)}</dd>
+                        <dt class="col-4 text-muted">Name</dt><dd class="col-8 fw-bold">${esc(sd.route.route_name)}</dd>
+                        <dt class="col-4 text-muted">From</dt><dd class="col-8">${esc(sd.route.start_point)}</dd>
+                        <dt class="col-4 text-muted">To</dt><dd class="col-8">${esc(sd.route.end_point)}</dd>
                       </dl>
                       <hr>
-                      <h6 class="fw-bold mb-3 text-primary">Route Waypoints</h6>
+                      <h6 class="fw-bold mb-2">Waypoints</h6>
                       ${stopsHtml}`;
-
-                    // Dummy static schedule for now (until we build a complex timetable module)
-                    document.getElementById("scheduleTable").innerHTML = `
-                        <tr>
-                            <td>Morning Trip 1</td>
-                            <td>${esc(scheduleData.route.start_point)} → ${esc(scheduleData.route.end_point)}</td>
-                            <td>08:00 AM</td>
-                            <td>09:30 AM</td>
-                        </tr>
-                        <tr>
-                            <td>Morning Trip 2</td>
-                            <td>${esc(scheduleData.route.end_point)} → ${esc(scheduleData.route.start_point)}</td>
-                            <td>10:00 AM</td>
-                            <td>11:30 AM</td>
-                        </tr>
-                        <tr>
-                            <td>Afternoon Trip 1</td>
-                            <td>${esc(scheduleData.route.start_point)} → ${esc(scheduleData.route.end_point)}</td>
-                            <td>02:00 PM</td>
-                            <td>03:30 PM</td>
-                        </tr>
-                        <tr>
-                            <td>Evening Trip 1</td>
-                            <td>${esc(scheduleData.route.end_point)} → ${esc(scheduleData.route.start_point)}</td>
-                            <td>05:30 PM</td>
-                            <td>07:00 PM</td>
-                        </tr>
-                    `;
                 } else {
-                    document.getElementById("routeInfo").innerHTML = '<p class="text-muted">Bus is not assigned to a specific route.</p>';
-                    document.getElementById("scheduleTable").innerHTML = '<tr><td colspan="4" class="text-center text-muted">No route assigned</td></tr>';
+                    document.getElementById("routeInfo").innerHTML = '<p class="text-muted">Bus not assigned to a route.</p>';
+                }
+
+                // ── Static schedule rows (history = morning trips, future = afternoon+evening) ────
+                const dir1 = `${esc(sd.route?.start_point || "Start")} → ${esc(sd.route?.end_point || "End")}`;
+                const dir2 = `${esc(sd.route?.end_point || "End")} → ${esc(sd.route?.start_point || "Start")}`;
+
+                // ── Trip tables (History/Future) are commented out in HTML
+                const hTable = document.getElementById("historyTable");
+                const fTable = document.getElementById("futureTable");
+
+                if (hTable) {
+                    hTable.innerHTML = `
+                        <tr><td>1</td><td>${dir1}</td><td>06:00 AM</td><td>07:30 AM</td><td>${badge("resolved")}</td></tr>
+                        <tr><td>2</td><td>${dir2}</td><td>08:00 AM</td><td>09:30 AM</td><td>${badge("resolved")}</td></tr>`;
+                }
+
+                if (fTable) {
+                    fTable.innerHTML = `
+                        <tr><td>1</td><td>${dir1}</td><td>02:00 PM</td><td>03:30 PM</td><td>${badge("pending")}</td></tr>
+                        <tr><td>2</td><td>${dir2}</td><td>05:00 PM</td><td>06:30 PM</td><td>${badge("pending")}</td></tr>
+                        <tr><td>3</td><td>${dir1}</td><td>07:00 PM</td><td>08:30 PM</td><td>${badge("pending")}</td></tr>`;
                 }
 
             } catch (err) {
                 console.error(err);
-                document.getElementById("busInfo").innerHTML = '<p class="text-danger">Error loading data.</p>';
+                document.getElementById("currentTrip").innerHTML = '<p class="text-danger">Error loading data.</p>';
             }
         }
 
         load();
     </script>
 </body>
-
 </html>

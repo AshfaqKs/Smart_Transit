@@ -23,7 +23,8 @@ def detect():
     """
     from ai.face_detector import detect_face
 
-    bus_id = request.form.get("bus_id", type=int)
+    bus_id   = request.form.get("bus_id", type=int)
+    location = request.form.get("location")
 
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
@@ -42,6 +43,7 @@ def detect():
             bus_id=bus_id,
             detected_person_type=result["person_type"],
             reference_id=result["reference_id"],
+            location=location,
             alert_status="unresolved",
         )
         db.session.add(detection)

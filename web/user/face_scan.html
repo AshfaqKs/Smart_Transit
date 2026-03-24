@@ -8,7 +8,41 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="../assets/css/style.css" />
     <style>
-        /* Webcam feed */
+        /* ── Tab Nav ───────────────────────────────── */
+        .fs-tabs {
+            display: flex;
+            gap: .5rem;
+            border-bottom: 2px solid var(--dark-border);
+            margin-bottom: 1.75rem;
+            padding-bottom: 0;
+        }
+
+        .fs-tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: .95rem;
+            padding: .6rem 1.2rem;
+            cursor: pointer;
+            transition: all .2s;
+            margin-bottom: -2px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .fs-tab-btn:hover {
+            color: var(--text-main);
+            background: rgba(79, 70, 229, .1);
+        }
+
+        .fs-tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(79, 70, 229, .12);
+        }
+
+        /* ── Webcam feed ──────────────────────────── */
         #webcamVideo {
             width: 100%;
             max-height: 340px;
@@ -22,6 +56,7 @@
             display: none;
         }
 
+        /* ── Pulse animation for live indicator ───── */
         .live-dot {
             width: 10px;
             height: 10px;
@@ -33,10 +68,41 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: .4; transform: scale(1.3); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .4;
+                transform: scale(1.3);
+            }
         }
 
+        /* ── Person card thumbnails ───────────────── */
+        .person-thumb {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--dark-border);
+        }
+
+        .no-photo {
+            width: 48px;
+            height: 48px;
+            background: var(--dark);
+            border-radius: 8px;
+            border: 1px dashed var(--dark-border);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        /* ── Result box styling ───────────────────── */
         #scanResult {
             min-height: 180px;
             border-radius: var(--radius);
@@ -53,11 +119,42 @@
         #scanResult.match {
             border-color: var(--danger);
             background: rgba(239, 68, 68, .07);
+            animation: glowRed .6s ease;
         }
 
         #scanResult.clear {
             border-color: var(--success);
             background: rgba(16, 185, 129, .07);
+        }
+
+        @keyframes glowRed {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, .6);
+            }
+
+            100% {
+                box-shadow: 0 0 32px 12px rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* ── Add-form collapsible ─────────────────── */
+        .add-form-panel {
+            background: rgba(79, 70, 229, .07);
+            border: 1px solid rgba(79, 70, 229, .25);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* scrollable table wrapper */
+        .table-scroll {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        /* Scan controls */
+        #webcamControls {
+            gap: .75rem;
         }
     </style>
 </head>
@@ -65,66 +162,187 @@
 <body>
     <nav class="st-navbar d-flex align-items-center justify-content-between px-4">
         <span class="brand">🚌 SmartTransit</span>
-        <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+        <div class="d-flex gap-3 align-items-center">
+            <span class="text-muted">Passenger Portal</span>
+            <button class="btn-st-outline btn-sm" onclick="logout()">Logout</button>
+        </div>
     </nav>
     <div class="st-layout">
+        <!-- Sidebar -->
         <aside class="st-sidebar">
             <a href="dashboard.html" class="menu-item"><span class="icon">🏠</span> Home</a>
             <a href="buses.html" class="menu-item"><span class="icon">🚌</span> Find Bus</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
             <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
-            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
-            <a href="face_scan.html" class="menu-item active"><span class="icon">🔍</span> Face Scan</a>
             <a href="criminals.html" class="menu-item"><span class="icon">🔒</span> Criminal DB</a>
             <a href="missing.html" class="menu-item"><span class="icon">🔍</span> Missing DB</a>
+            <a href="camera.html" class="menu-item"><span class="icon">📷</span> Camera AI</a>
+            <a href="face_scan.html" class="menu-item active"><span class="icon">🔍</span> Face Scan</a>
         </aside>
 
         <main class="st-content">
-            <h2 class="fw-bold mb-4">🔍 Face Scan</h2>
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <h2 class="fw-bold mb-0">🔍 Face Scan</h2>
+                <span class="badge-pending" style="font-size:.85rem;">AI Powered</span>
+            </div>
 
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="st-card">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <h5 class="fw-bold mb-0">Live Camera Feed</h5>
-                            <span id="liveIndicator" class="text-muted small">Camera off</span>
+            <!-- ── Tab bar ── -->
+            <div class="fs-tabs">
+                <button class="fs-tab-btn active" onclick="switchTab('webcam', this)" id="tabBtnWebcam">
+                    🎥 Live Webcam Scan
+                </button>
+                <button class="fs-tab-btn" onclick="switchTab('criminals', this)" id="tabBtnCriminals">
+                    🔴 Criminals DB
+                </button>
+                <button class="fs-tab-btn" onclick="switchTab('missing', this)" id="tabBtnMissing">
+                    🟡 Missing Persons
+                </button>
+                <button class="fs-tab-btn" onclick="switchTab('history', this)" id="tabBtnHistory">
+                    📋 Detection History
+                </button>
+            </div>
+
+            <!-- ════════════════════ TAB 1: WEBCAM ════════════════════ -->
+            <div id="tab-webcam">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="st-card">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h5 class="fw-bold mb-0">Live Camera Feed</h5>
+                                <span id="liveIndicator" class="text-muted small">Camera off</span>
+                            </div>
+
+                            <video id="webcamVideo" autoplay playsinline muted></video>
+                            <canvas id="captureCanvas"></canvas>
+
+                            <div class="d-flex mt-3" id="webcamControls">
+                                <button class="btn-st flex-fill" id="startCamBtn" onclick="startWebcam()">
+                                    📷 Start Webcam
+                                </button>
+                                <button class="btn-st flex-fill" id="stopCamBtn" onclick="stopWebcam()" style="display:none;
+                                background: linear-gradient(135deg,#ef4444,#b91c1c);">
+                                    ⏹ Stop
+                                </button>
+                            </div>
+
+                            <div class="mt-3">
+                                <label class="fw-semibold small mb-1 d-block">Bus (optional)</label>
+                                <select class="form-select mb-3" id="scanBusSelect">
+                                    <option value="">— No specific bus —</option>
+                                </select>
+                                <button class="btn-st w-100 py-2" id="scanBtn" onclick="captureAndScan()" disabled>
+                                    🔍 Capture &amp; Scan
+                                </button>
+                            </div>
                         </div>
+                    </div>
 
-                        <video id="webcamVideo" autoplay playsinline muted></video>
-                        <canvas id="captureCanvas"></canvas>
+                    <div class="col-lg-6">
+                        <div class="st-card h-100 d-flex flex-column">
+                            <h5 class="fw-bold mb-3">Scan Result</h5>
+                            <div id="scanResult" class="flex-fill">
+                                <span style="font-size:3rem;">🔍</span>
+                                <p class="text-muted mt-3 mb-0">Start the webcam and capture a frame to run AI
+                                    detection.</p>
+                            </div>
 
-                        <div class="d-flex mt-3 gap-2">
-                            <button class="btn-st flex-fill" id="startCamBtn" onclick="startWebcam()">
-                                📷 Start Webcam
-                            </button>
-                            <button class="btn-st flex-fill" id="stopCamBtn" onclick="stopWebcam()" style="display:none; background: #ef4444;">
-                                ⏹ Stop
-                            </button>
-                        </div>
-
-                        <div class="mt-3">
-                            <label class="fw-semibold small mb-1 d-block">Select Bus <span class="text-danger">*</span></label>
-                            <select class="form-select mb-3" id="scanBusSelect" required>
-                                <option value="">-- Choose Bus --</option>
-                            </select>
-                            <button class="btn-st w-100 py-2" id="scanBtn" onclick="captureAndScan()" disabled>
-                                🔍 Capture &amp; Scan
-                            </button>
+                            <!-- Captured preview -->
+                            <div id="capturedPreviewWrap" class="mt-3" style="display:none;">
+                                <p class="small text-muted mb-1">Captured frame:</p>
+                                <img id="capturedPreview" src="" alt="Captured"
+                                    style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--dark-border);" />
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="col-lg-6">
-                    <div class="st-card h-100 d-flex flex-column">
-                        <h5 class="fw-bold mb-3">Scan Result</h5>
-                        <div id="scanResult" class="flex-fill">
-                            <span style="font-size:3rem;">🔍</span>
-                            <p class="text-muted mt-3 mb-0">Start the webcam and capture a frame to run AI detection.</p>
-                        </div>
-                        <div id="capturedPreviewWrap" class="mt-3" style="display:none;">
-                            <p class="small text-muted mb-1">Captured frame:</p>
-                            <img id="capturedPreview" src="" alt="Captured" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--dark-border);" />
-                        </div>
+            <!-- ════════════════════ TAB 2: CRIMINALS ════════════════════ -->
+            <div id="tab-criminals" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Criminal Records</h5>
+                </div>
+
+
+
+                <div class="st-card p-0">
+                    <div class="table-scroll">
+                        <table class="st-table">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Crime Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="criminalsBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════ TAB 3: MISSING PERSONS ════════════════════ -->
+            <div id="tab-missing" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Missing Persons Records</h5>
+                </div>
+
+
+
+                <div class="st-card p-0">
+                    <div class="table-scroll">
+                        <table class="st-table">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Age</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody id="missingBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════════════════════ TAB 4: HISTORY ════════════════════ -->
+            <div id="tab-history" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Detection History</h5>
+                    <button class="btn-st-outline btn-sm" onclick="loadHistory()">🔄 Refresh</button>
+                </div>
+                <div class="st-card p-0">
+                    <div class="table-scroll">
+                        <table class="st-table">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Bus ID</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -136,21 +354,33 @@
     <script src="../assets/js/api.js"></script>
     <script>
         requireAuth("user");
-        let stream = null;
 
-        async function loadBuses() {
-            try {
-                const buses = await api.get("/user/buses/nearest");
-                const sel = document.getElementById("scanBusSelect");
-                buses.forEach(b => {
-                    const opt = document.createElement("option");
-                    opt.value = b.bus_id;
-                    opt.textContent = `Bus #${b.bus_number} (${b.registration_number})`;
-                    sel.appendChild(opt);
-                });
-            } catch (_) { }
+        const API_BASE_URL = "http://127.0.0.1:5000";
+        let stream = null;   // MediaStream reference
+        let activeTab = "webcam";
+
+        // ── Tab switching ──────────────────────────────────────────────────────
+        function switchTab(name, btn) {
+            ["webcam", "criminals", "missing", "history"].forEach(t => {
+                document.getElementById(`tab-${t}`).style.display = "none";
+            });
+            document.querySelectorAll(".fs-tab-btn").forEach(b => b.classList.remove("active"));
+            document.getElementById(`tab-${name}`).style.display = "block";
+            btn.classList.add("active");
+            activeTab = name;
+
+            // Lazy-load on first switch
+            if (name === "criminals") loadCriminals();
+            if (name === "missing") loadMissingPersons();
+            if (name === "history") loadHistory();
         }
 
+        function toggleForm(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === "none" ? "block" : "none";
+        }
+
+        // ── Webcam ─────────────────────────────────────────────────────────────
         async function startWebcam() {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -159,14 +389,18 @@
                 document.getElementById("startCamBtn").style.display = "none";
                 document.getElementById("stopCamBtn").style.display = "inline-flex";
                 document.getElementById("scanBtn").disabled = false;
-                document.getElementById("liveIndicator").innerHTML = '<span class="live-dot"></span><span class="text-danger fw-semibold">LIVE</span>';
+                document.getElementById("liveIndicator").innerHTML =
+                    '<span class="live-dot"></span><span class="text-danger fw-semibold">LIVE</span>';
             } catch (err) {
-                showToast("Camera access denied", "error");
+                showToast("Camera access denied: " + err.message, "error");
             }
         }
 
         function stopWebcam() {
-            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
             const video = document.getElementById("webcamVideo");
             video.srcObject = null;
             document.getElementById("startCamBtn").style.display = "inline-flex";
@@ -178,46 +412,179 @@
 
         async function captureAndScan() {
             if (!stream) return;
-            const busId = document.getElementById("scanBusSelect").value;
-            if (!busId) { showToast("Please select a bus", "error"); return; }
-
             const video = document.getElementById("webcamVideo");
             const canvas = document.getElementById("captureCanvas");
             canvas.width = video.videoWidth || 640;
             canvas.height = video.videoHeight || 480;
             canvas.getContext("2d").drawImage(video, 0, 0);
 
+            // Show captured preview
             const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
             document.getElementById("capturedPreview").src = dataUrl;
             document.getElementById("capturedPreviewWrap").style.display = "block";
 
+            // Show scanning state
             const result = document.getElementById("scanResult");
             result.className = "";
-            result.innerHTML = '<div class="spinner-border text-primary mb-3"></div><p class="text-muted">Analyzing...</p>';
+            result.innerHTML = '<div class="spinner-border text-primary mb-3"></div><p class="text-muted">Running AI face detection…</p>';
 
+            // Convert canvas to blob and send
             canvas.toBlob(async (blob) => {
                 const formData = new FormData();
                 formData.append("image", blob, "webcam_capture.jpg");
-                formData.append("bus_id", busId);
+                const busId = document.getElementById("scanBusSelect").value;
+                if (busId) formData.append("bus_id", busId);
 
-                try {
-                    const res = await api.upload("/camera/detect", formData);
-                    if (res.matched) {
-                        result.className = "match";
-                        result.innerHTML = `<span style="font-size:3rem">🚨</span><h4 class="text-danger fw-bold mt-2">MATCH DETECTED!</h4><p class="text-warning text-capitalize">${esc(res.person_type)} Match #${esc(res.reference_id)}</p>`;
-                        showToast("Alert generated!", "error");
-                    } else {
-                        result.className = "clear";
-                        result.innerHTML = `<span style="font-size:3rem">✅</span><h4 class="text-success fw-bold mt-2">No Match</h4><p class="text-muted">Person not in database.</p>`;
-                        showToast("Scan complete.", "success");
-                    }
-                } catch (err) {
-                    result.innerHTML = `<span style="font-size:2.5rem">❌</span><p class="text-muted mt-2">Error</p>`;
+                // Auto-capture location if available
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        const name = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                        formData.append("location", name);
+                        await performScan(formData);
+                    }, async () => {
+                        await performScan(formData); // proceed without location if denied
+                    });
+                } else {
+                    await performScan(formData);
                 }
             }, "image/jpeg", 0.9);
         }
 
-        loadBuses();
+        async function performScan(formData) {
+            const result = document.getElementById("scanResult");
+            try {
+                const res = await api.upload("/camera/detect", formData);
+
+                    if (res.error) {
+                        result.className = "";
+                        result.innerHTML = `<span style="font-size:2.5rem">⚠️</span>
+                            <h5 class="text-warning mt-2">Detection Error</h5>
+                            <p class="text-muted small">${esc(res.error)}</p>`;
+                    } else if (res.matched) {
+                        result.className = "match";
+                        result.innerHTML = `
+                            <span style="font-size:3rem">🚨</span>
+                            <h4 class="text-danger fw-bold mt-2">MATCH DETECTED!</h4>
+                            <div class="mt-3 text-start p-3 rounded w-100" style="background:rgba(239,68,68,.1);max-width:320px;">
+                                <p class="mb-1"><strong>Category:</strong>
+                                    <span class="text-warning text-capitalize">${esc(res.person_type.replace("_", " "))}</span></p>
+                                <p class="mb-1"><strong>Subject ID:</strong> #${esc(res.reference_id)}</p>
+                                <p class="mb-0"><strong>Alert ID:</strong> #${esc(res.detection_id)} generated</p>
+                            </div>`;
+                        showToast("⚠️ Alert generated!", "error");
+                    } else {
+                        result.className = "clear";
+                        result.innerHTML = `<span style="font-size:3rem">✅</span>
+                            <h4 class="text-success fw-bold mt-2">No Match Found</h4>
+                            <p class="text-muted mt-1">Person not in criminal or missing persons database.</p>`;
+                        showToast("Scan complete — No match.", "success");
+                    }
+                } catch (err) {
+                    result.innerHTML = `<span style="font-size:2.5rem">❌</span>
+                        <p class="text-muted mt-2">${esc(err.message)}</p>`;
+                }
+        }
+
+        // ── Photo URL helper ───────────────────────────────────────────────────
+        function photoEl(filename) {
+            if (!filename) return `<span class="no-photo">👤</span>`;
+            return `<img src="${API_BASE_URL}/uploads/${esc(filename)}" class="person-thumb" alt="photo" />`;
+        }
+
+        // ── Criminals (read-only for passengers) ──────────────────────────────
+        async function loadCriminals() {
+            const tbody = document.getElementById("criminalsBody");
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>`;
+            try {
+                const list = await api.get("/user/criminals");
+                if (!list.length) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No criminals in database yet.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = list.map((c, i) => `
+                    <tr>
+                        <td>${photoEl(c.photo)}</td>
+                        <td><small class="text-muted">${i + 1}</small></td>
+                        <td class="fw-semibold">${esc(c.name)}</td>
+                        <td>${esc(c.crime_type) || '<span class="text-muted">—</span>'}</td>
+                        <td><small>${esc(c.description) || '<span class="text-muted">—</span>'}</small></td>
+                    </tr>`).join("");
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Failed to load.</td></tr>`;
+            }
+        }
+
+
+
+        // ── Missing Persons (read-only for passengers) ────────────────────────
+        async function loadMissingPersons() {
+            const tbody = document.getElementById("missingBody");
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Loading…</td></tr>`;
+            try {
+                const list = await api.get("/user/missing");
+                if (!list.length) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No missing persons in database yet.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = list.map((mp, i) => `
+                    <tr>
+                        <td>${photoEl(mp.photo)}</td>
+                        <td><small class="text-muted">${i + 1}</small></td>
+                        <td class="fw-semibold">${esc(mp.name)}</td>
+                        <td>${mp.age ?? '<span class="text-muted">—</span>'}</td>
+                        <td><small>${esc(mp.description) || '<span class="text-muted">—</span>'}</small></td>
+                    </tr>`).join("");
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Failed to load.</td></tr>`;
+            }
+        }
+
+        // ── Detection History (uses passenger alerts endpoint) ─────────────────
+        async function loadHistory() {
+            const tbody = document.getElementById("historyBody");
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Loading…</td></tr>`;
+            try {
+                const list = await api.get("/user/alerts");
+                if (!list.length) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">No detections logged yet.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = list.map(d => {
+                    const typeLabel = d.detected_person_type === "criminal"
+                        ? '<span class="badge-rejected">Criminal</span>'
+                        : '<span class="badge-pending">Missing Person</span>';
+                    const timeStr = d.detection_time ? new Date(d.detection_time + 'Z').toLocaleString() : "—";
+                    return `
+                    <tr>
+                        <td>${photoEl(d.person_photo)}</td>
+                        <td class="fw-semibold">${esc(d.person_name || '—')}</td>
+                        <td>${typeLabel}</td>
+                        <td>${d.bus_id ? `Bus #${esc(d.bus_id)}` : '<span class="text-muted">—</span>'}</td>
+                        <td><small>${esc(timeStr)}</small></td>
+                        <td>${badge(d.alert_status)}</td>
+                    </tr>`;
+                }).join("");
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Failed to load.</td></tr>`;
+            }
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        async function init() {
+            // Load buses for scan dropdown
+            try {
+                const buses = await api.get("/user/buses/nearest");
+                const sel = document.getElementById("scanBusSelect");
+                buses.forEach(b => {
+                    const opt = document.createElement("option");
+                    opt.value = b.bus_id;
+                    opt.textContent = `Bus #${b.bus_number}${b.route_id ? " (On Route)" : ""}`;
+                    sel.appendChild(opt);
+                });
+            } catch (_) { }
+        }
+
+        init();
     </script>
 </body>
 

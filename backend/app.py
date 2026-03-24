@@ -111,4 +111,4 @@ if __name__ == "__main__":
         methods = ",".join(sorted(rule.methods - {"HEAD", "OPTIONS"}))
         print(f"  {methods:20s}  {rule.rule}")
     print("\n[SmartTransit] Running at http://127.0.0.1:5000\n")
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=True)
