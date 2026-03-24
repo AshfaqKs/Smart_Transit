@@ -23,3 +23,9 @@ yarn-error.log*
 # OS
 Thumbs.db
 .DS_Store
+
+/backend/uploads/*
+!/backend/uploads/.gitkeep
+/backend/error.log
+/.env
+/smart_transit.db
