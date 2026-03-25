@@ -221,3 +221,8 @@ WHERE admins.email = %(email_1)s
 2026-03-25 12:09:34,028 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
 2026-03-25 12:21:36,484 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
 2026-03-25 12:21:42,068 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:38:01,824 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:38:12,935 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:38:26,678 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:41:08,388 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:41:16,924 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
