@@ -91,7 +91,7 @@
                         <td>${badge(a.alert_status)}</td>
                         <td class="text-end pe-4">
                             ${a.alert_status === 'unresolved' ? 
-                                `<button class="btn-st-outline btn-sm" onclick="resolve('${a.id}')">Resolve</button>` : 
+                                `<button class="btn-st-outline btn-sm" onclick="resolve('${a.detection_id}')">Resolve</button>` : 
                                 '<span class="text-success small">Done</span>'}
                         </td>
                     </tr>

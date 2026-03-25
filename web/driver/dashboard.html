@@ -20,6 +20,7 @@
             <a href="route.html" class="menu-item"><span class="icon">🗺️</span> My Route</a>
             <a href="location.html" class="menu-item"><span class="icon">📍</span> Update Location</a>
             <a href="complaints.html" class="menu-item"><span class="icon">📋</span> Complaints</a>
+            <a href="alerts.html" class="menu-item"><span class="icon">🔔</span> Alerts</a>
         </aside>
         <main class="st-content">
             <h2 class="fw-bold mb-4">Driver Dashboard</h2>
@@ -40,11 +41,22 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-12">
+                <div class="col-md-6">
                     <div class="st-card">
                         <h5 class="fw-bold mb-3">Recent Complaints on My Bus</h5>
-                        <div id="driverAlerts">
+                        <div id="driverComplaints">
                             <div class="text-muted">Loading…</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="st-card">
+                        <h5 class="fw-bold mb-3 d-flex justify-content-between align-items-center">
+                            Recent Security Alerts
+                            <a href="alerts.html" class="btn-st-outline btn-sm" style="font-size:.75rem">View All</a>
+                        </h5>
+                        <div id="driverAlerts">
+                            <div class="text-muted small">Loading…</div>
                         </div>
                     </div>
                 </div>
@@ -57,8 +69,9 @@
     <script>
         requireAuth("driver");
         async function load() {
-            const [profile, schedule, alerts] = await Promise.all([
-                api.get("/driver/profile"), api.get("/driver/schedule"), api.get("/driver/complaints"),
+            const [profile, schedule, complaints, alerts] = await Promise.all([
+                api.get("/driver/profile"), api.get("/driver/schedule"), 
+                api.get("/driver/complaints"), api.get("/driver/alerts")
             ]);
             document.getElementById("profileInfo").innerHTML = `
       <dl class="row mb-0">
@@ -83,9 +96,9 @@
                 document.getElementById("scheduleInfo").innerHTML = '<p class="text-muted">No bus assigned yet.</p>';
             }
 
-            const compEl = document.getElementById("driverAlerts");
-            if (!alerts.length) { compEl.innerHTML = '<p class="text-muted">No complaints. All clear! ✅</p>'; }
-            else compEl.innerHTML = alerts.slice(0, 5).map(c => `
+            const compEl = document.getElementById("driverComplaints");
+            if (!complaints.length) { compEl.innerHTML = '<p class="text-muted">No complaints. All clear! ✅</p>'; }
+            else compEl.innerHTML = complaints.slice(0, 5).map(c => `
       <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
         <div>
             <div class="fw-bold">${esc(c.complaint_type)}</div>
@@ -94,6 +107,21 @@
         <div class="text-end">
             <small class="text-muted d-block">${c.created_at ? new Date(c.created_at).toLocaleString('en-IN', {hour:'2-digit', minute:'2-digit'}) : "—"}</small>
             ${badge(c.status)}
+        </div>
+      </div>`).join("");
+
+            const alertEl = document.getElementById("driverAlerts");
+            if (!alerts.length) { alertEl.innerHTML = '<p class="text-muted small">No security alerts. All clear! ✅</p>'; }
+            else alertEl.innerHTML = alerts.slice(0, 5).map(a => `
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+        <div>
+            <div class="text-danger fw-bold small">🚨 ${esc((a.detected_person_type || '').toUpperCase().replace('_',' '))}</div>
+            <div class="fw-semibold">${esc(a.person_name)}</div>
+            <small class="text-muted">📍 ${esc(a.location || 'Unknown')}</small>
+        </div>
+        <div class="text-end">
+            <small class="text-muted d-block">${a.detection_time ? new Date(a.detection_time).toLocaleString('en-IN', {hour:'2-digit', minute:'2-digit'}) : "—"}</small>
+            ${badge(a.alert_status)}
         </div>
       </div>`).join("");
         }
