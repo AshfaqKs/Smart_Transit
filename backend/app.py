@@ -1,10 +1,8 @@
-"""
-SmartTransit — Main Application Entry Point
-Flask + SQLAlchemy + JWT + SocketIO + Bcrypt
-"""
 import os
 import sys
 import io
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Force UTF-8 stdout on Windows to avoid UnicodeEncodeError with non-ASCII chars
 if sys.stdout.encoding != "utf-8":
@@ -24,6 +22,17 @@ from extensions import db, jwt, socketio, bcrypt
 def create_app(config_class=Config):
     app = Flask(__name__, static_folder="../web", static_url_path="/web")
     app.config.from_object(config_class)
+
+    # ── Logging ──────────────────────────────────────────────────────────────
+    log_file = os.path.join(os.path.dirname(__file__), "app.log")
+    file_handler = RotatingFileHandler(log_file, maxBytes=1000000, backupCount=3)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info("SmartTransit Startup")
 
     # Extensions
     db.init_app(app)

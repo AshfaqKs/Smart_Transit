@@ -50,7 +50,8 @@ def update_profile():
 @jwt_required()
 def get_nearest_buses():
     _get_user_id()
-    buses = Bus.query.filter_by(status="active").all()
+    # Return all buses so the AI dropdowns aren't empty during testing
+    buses = Bus.query.all()
     return jsonify([b.to_dict() for b in buses])
 
 # ── Routes ────────────────────────────────────────────────────────────────────

@@ -6,8 +6,7 @@ CREATE TABLE IF NOT EXISTS admins (
     name         VARCHAR(120) NOT NULL,
     email        VARCHAR(200) UNIQUE NOT NULL,
     password     VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(20),
-    created_at   TIMESTAMP DEFAULT NOW()
+    phone_number VARCHAR(20)
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -16,8 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     email        VARCHAR(200) UNIQUE NOT NULL,
     password     VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
-    address      VARCHAR(300),
-    created_at   TIMESTAMP DEFAULT NOW()
+    address      VARCHAR(300)
 );
 
 CREATE TABLE IF NOT EXISTS bus_drivers (
@@ -27,8 +25,7 @@ CREATE TABLE IF NOT EXISTS bus_drivers (
     password        VARCHAR(255) NOT NULL,
     phone_number    VARCHAR(20),
     license_number  VARCHAR(50) UNIQUE NOT NULL,
-    approval_status BOOLEAN DEFAULT FALSE,
-    created_at      TIMESTAMP DEFAULT NOW()
+    approval_status BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS routes (
@@ -60,8 +57,7 @@ CREATE TABLE IF NOT EXISTS police_stations (
     location       VARCHAR(300),
     contact_number VARCHAR(20),
     email          VARCHAR(200) UNIQUE NOT NULL,
-    password       VARCHAR(255) NOT NULL,
-    created_at     TIMESTAMP DEFAULT NOW()
+    password       VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS criminals (

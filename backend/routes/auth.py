@@ -1,8 +1,5 @@
-"""
-Auth Routes — SmartTransit
-Handles login/register for all roles: admin, user, driver, police.
-"""
-from flask import Blueprint, request, jsonify
+import traceback
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token
 from extensions import db, bcrypt
 from models.admin import Admin
@@ -28,11 +25,24 @@ def _token(identity, role):
 # ── Admin Login ──────────────────────────────────────────────────────────────
 @auth_bp.route("/admin/login", methods=["POST"])
 def admin_login():
-    data = request.get_json()
-    admin = Admin.query.filter_by(email=data.get("email")).first()
-    if not admin or not bcrypt.check_password_hash(admin.password, data.get("password", "")):
-        return _bad("Invalid credentials", 401)
-    return _token(admin.admin_id, "admin")
+    try:
+        data = request.get_json()
+        if not data:
+            return _bad("Missing JSON body", 400)
+            
+        admin = Admin.query.filter_by(email=data.get("email")).first()
+        if not admin or not bcrypt.check_password_hash(admin.password, data.get("password", "")):
+            return _bad("Invalid credentials", 401)
+        return _token(admin.admin_id, "admin")
+    except Exception as e:
+        err_msg = traceback.format_exc()
+        print(f"\n[DEBUG] Admin login error:\n{err_msg}\n")
+        current_app.logger.error(f"Admin login error: {e}", exc_info=True)
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e),
+            "traceback": err_msg if current_app.debug else None
+        }), 500
 
 # ── User Register / Login ────────────────────────────────────────────────────
 @auth_bp.route("/user/register", methods=["POST"])

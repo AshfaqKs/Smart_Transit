@@ -1,7 +1,7 @@
 """
 BusDriver Model — SmartTransit
 """
-from extensions import db, get_ist_now
+from extensions import db
 
 class BusDriver(db.Model):
     __tablename__ = "bus_drivers"
@@ -13,7 +13,6 @@ class BusDriver(db.Model):
     phone_number    = db.Column(db.String(20))
     license_number  = db.Column(db.String(50), unique=True, nullable=False)
     approval_status = db.Column(db.Boolean, default=False)
-    created_at      = db.Column(db.DateTime, default=get_ist_now)
 
     buses = db.relationship("Bus", backref="driver", lazy=True)
 
@@ -25,5 +24,4 @@ class BusDriver(db.Model):
             "phone_number":    self.phone_number,
             "license_number":  self.license_number,
             "approval_status": self.approval_status,
-            "registration_date": self.created_at.isoformat() if self.created_at else None,
         }

@@ -1,7 +1,7 @@
 """
 PoliceStation Model — SmartTransit
 """
-from extensions import db, get_ist_now
+from extensions import db
 
 class PoliceStation(db.Model):
     __tablename__ = "police_stations"
@@ -12,7 +12,6 @@ class PoliceStation(db.Model):
     contact_number = db.Column(db.String(20))
     email          = db.Column(db.String(200), unique=True, nullable=False)
     password       = db.Column(db.String(255), nullable=False)
-    created_at     = db.Column(db.DateTime, default=get_ist_now)
 
     criminals      = db.relationship("Criminal",      backref="police_station", lazy=True)
     missing_persons= db.relationship("MissingPerson", backref="police_station", lazy=True)
@@ -25,5 +24,4 @@ class PoliceStation(db.Model):
             "location":       self.location,
             "contact_number": self.contact_number,
             "email":          self.email,
-            "registration_date": self.created_at.isoformat() if self.created_at else None,
         }

@@ -124,6 +124,7 @@
                           <div>
                             <small class="text-muted">#${i+1} · ${esc(c.passenger_name || 'Passenger')}</small><br>
                             ${esc(c.complaint_type)}
+                            <br><small class="text-muted">📍 ${esc(c.bus_location_at_complaint || 'Unknown location')}</small>
                           </div>
                           <div class="text-end">
                             <small class="text-muted d-block">${c.created_at ? new Date(c.created_at).toLocaleString('en-IN', {hour:'2-digit', minute:'2-digit'}) : "—"}</small>

@@ -1,0 +1,223 @@
+2026-03-25 11:53:51,654 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:38]
+2026-03-25 11:59:08,708 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 11:59:14,437 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:02:56,010 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:03:01,431 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:03:27,447 ERROR: Admin login error: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@smarttransit.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py:40]
+Traceback (most recent call last):
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py", line 33, in admin_login
+    admin = Admin.query.filter_by(email=data.get("email")).first()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@smarttransit.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-03-25 12:06:52,132 ERROR: Admin login error: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@gmail.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py:40]
+Traceback (most recent call last):
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py", line 33, in admin_login
+    admin = Admin.query.filter_by(email=data.get("email")).first()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@gmail.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-03-25 12:08:05,945 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:08:11,192 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:08:19,877 ERROR: Admin login error: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@smarttransit.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405) [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py:40]
+Traceback (most recent call last):
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedColumn: column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\routes\auth.py", line 33, in admin_login
+    admin = Admin.query.filter_by(email=data.get("email")).first()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\ashfa\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column admins.created_at does not exist
+LINE 1: ...word, admins.phone_number AS admins_phone_number, admins.cre...
+                                                             ^
+
+[SQL: SELECT admins.admin_id AS admins_admin_id, admins.name AS admins_name, admins.email AS admins_email, admins.password AS admins_password, admins.phone_number AS admins_phone_number, admins.created_at AS admins_created_at 
+FROM admins 
+WHERE admins.email = %(email_1)s 
+ LIMIT %(param_1)s]
+[parameters: {'email_1': 'admin@smarttransit.com', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-03-25 12:09:34,028 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:21:36,484 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]
+2026-03-25 12:21:42,068 INFO: SmartTransit Startup [in C:\Users\ashfa\OneDrive\Desktop\Smart_Transit\backend\app.py:35]

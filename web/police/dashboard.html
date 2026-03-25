@@ -75,6 +75,7 @@
         <div>
           <span class="fw-semibold">${esc(a.detected_person_type)}</span>
           · Ref #${esc(a.reference_id)} · Bus #${esc(a.bus_id) || "N/A"}
+          <br><small class="text-muted">📍 ${esc(a.location || 'Unknown location')}</small>
           <br><small class="text-muted">${esc(a.detection_time)}</small>
         </div>
         ${badge(a.alert_status)}

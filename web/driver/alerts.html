@@ -44,6 +44,7 @@
           <div>
             <div class="fw-bold text-danger fs-5">🚨 ${esc(a.detected_person_type === "criminal" ? "Criminal Detected!" : "Missing Person Detected!")}</div>
             <div class="text-muted mt-1">Reference ID: #${esc(a.reference_id)}</div>
+            <div class="text-muted" style="font-size:.85rem;">📍 Location: ${esc(a.location || '—')}</div>
             <div class="text-muted" style="font-size:.85rem;">${esc(a.detection_time)}</div>
             <div class="mt-2 p-2 rounded" style="background:rgba(239,68,68,.1); color:#fca5a5; font-size:.85rem;">
               ⚠️ Please remain calm and notify authorities immediately. Do not confront the individual.

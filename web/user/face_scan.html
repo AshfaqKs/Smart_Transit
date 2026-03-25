@@ -332,6 +332,7 @@
                                     <th>Name</th>
                                     <th>Category</th>
                                     <th>Bus ID</th>
+                                    <th>Location</th>
                                     <th>Time</th>
                                     <th>Status</th>
                                     <th>Action</th>
@@ -354,8 +355,6 @@
     <script src="../assets/js/api.js"></script>
     <script>
         requireAuth("user");
-
-        const API_BASE_URL = "http://127.0.0.1:5000";
         let stream = null;   // MediaStream reference
         let activeTab = "webcam";
 
@@ -560,6 +559,7 @@
                         <td class="fw-semibold">${esc(d.person_name || '—')}</td>
                         <td>${typeLabel}</td>
                         <td>${d.bus_id ? `Bus #${esc(d.bus_id)}` : '<span class="text-muted">—</span>'}</td>
+                        <td><small>${esc(d.location) || '<span class="text-muted">—</span>'}</small></td>
                         <td><small>${esc(timeStr)}</small></td>
                         <td>${badge(d.alert_status)}</td>
                     </tr>`;

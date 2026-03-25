@@ -85,12 +85,13 @@
 
             const el = document.getElementById("compList");
             if (!complaints.length) { el.innerHTML = '<p class="text-muted">No complaints yet.</p>'; return; }
-            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Passenger</th><th>Reg. No.</th><th>Type</th><th>Description</th><th>Date/Time</th><th>Status</th><th>Station</th><th>Actions</th></tr></thead>
+            el.innerHTML = `<table class="st-table"><thead><tr><th>#</th><th>Passenger</th><th>Reg. No.</th><th>Type</th><th>Location</th><th>Description</th><th>Date/Time</th><th>Status</th><th>Station</th><th>Actions</th></tr></thead>
       <tbody>${complaints.map((c, i) => `<tr>
         <td>${i + 1}</td>
         <td class="fw-semibold">${esc(c.passenger_name || 'Unknown')}</td>
         <td class="font-monospace">${esc(c.bus_registration) || '—'}</td>
         <td>${esc(c.complaint_type)}</td>
+        <td><small>📍 ${esc(c.bus_location_at_complaint || 'Unknown')}</small></td>
         <td>${esc(c.description?.substring(0, 50))}…</td>
         <td class="text-muted small">${(c.created_at || '').substring(0, 16).replace('T', ' ')}</td>
         <td>${badge(c.status)}</td>
